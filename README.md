@@ -33,7 +33,9 @@ compiles the collected data into a client-presentable report. Built with
   At Risk / Informational / Not Assessed), a plain-language **client-facing
   recommendation**, a technical finding, and technical action items — plus a
   risk-priorities table and next steps. Every recommendation and finding is
-  **editable** (with reset-to-auto-draft) before export.
+  **editable** (with reset-to-auto-draft) before export, and each section's
+  **rating can be overridden manually** — the override rolls up into the
+  overall risk rating, key focus areas, and priorities table.
 - Both reports: preview in-app, **download as standalone HTML**, or
   **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
