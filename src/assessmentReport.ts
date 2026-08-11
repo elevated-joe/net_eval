@@ -114,11 +114,21 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
     : ''
 
   const coverHtml = coverPage
-    ? `<section class="cover-page"><div class="cover-inner">
-        <div class="cover-kicker">Network Assessment</div>
-        <h1 class="cover-title">${esc(client)}</h1>
-        <div class="cover-meta"><div>${esc(date)}</div>${preparedBy ? `<div>Prepared by ${esc(preparedBy)}</div>` : ''}</div>
-      </div></section>`
+    ? `<section class="cover-page">
+        <div class="cover-top">
+          <div class="cover-bar"></div>
+          <div class="cover-kicker">Network Assessment</div>
+          <h1 class="cover-title">${esc(client)}</h1>
+          <div class="cover-rule"></div>
+        </div>
+        <div class="cover-bottom">
+          <div class="cover-meta">
+            <div><span>Date</span>${esc(date)}</div>
+            ${preparedBy ? `<div><span>Prepared by</span>${esc(preparedBy)}</div>` : ''}
+          </div>
+          <div class="cover-confidential">Confidential — prepared for ${esc(client)}.</div>
+        </div>
+      </section>`
     : `<header class="inline-head"><h1>${esc(client)}</h1><div class="meta"><span>${esc(date)}</span>${preparedBy ? `<span>Prepared by ${esc(preparedBy)}</span>` : ''}</div></header>`
 
   return `<!doctype html>
@@ -131,15 +141,18 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   * { box-sizing: border-box; }
   body { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a2432; margin: 0; background: #f4f6f8; line-height: 1.55; }
   .page { max-width: 8.5in; margin: 0 auto; background: #fff; padding: 0.85in 0.85in 1in; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-  .cover-page { min-height: 8.5in; display: flex; align-items: center; border-bottom: 0; }
-  .cover-inner { border-top: 6px solid #1f6feb; border-bottom: 6px solid #1f6feb; padding: 2.5rem 0; width: 100%; }
-  .cover-kicker { color: #1f6feb; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; font-size: 0.85rem; }
-  .cover-title { font-size: 2.75rem; margin: 0.75rem 0 1.5rem; line-height: 1.1; }
-  .cover-meta { color: #4a5a6a; font-size: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+  .cover-page { min-height: 8.5in; display: flex; flex-direction: column; justify-content: space-between; padding: 0.9in 0 0.8in; }
+  .cover-bar { height: 6px; width: 3.5in; background: #1f6feb; border-radius: 3px; margin-bottom: 2rem; }
+  .cover-kicker { color: #1f6feb; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.85rem; }
+  .cover-title { font-size: 3rem; margin: 0.6rem 0 0; line-height: 1.05; font-weight: 700; }
+  .cover-rule { height: 3px; background: #e2e8f0; margin-top: 1.4rem; }
+  .cover-meta { display: flex; gap: 3rem; color: #33465a; font-size: 1rem; }
+  .cover-meta span { display: block; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.68rem; color: #8895a3; margin-bottom: 0.15rem; }
+  .cover-confidential { margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.78rem; }
   .inline-head { border-bottom: 4px solid #1f6feb; padding-bottom: 0.9rem; margin-bottom: 1.25rem; }
   .inline-head h1 { margin: 0 0 0.35rem; font-size: 2rem; }
   .inline-head .meta { display: flex; gap: 1.5rem; color: #4a5a6a; font-size: 0.9rem; }
-  h2 { font-size: 1.1rem; color: #1f6feb; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3rem; margin: 1.6rem 0 0.6rem; display: flex; align-items: center; gap: 0.6rem; }
+  h2 { font-size: 1.1rem; color: #1f6feb; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.3rem; margin: 1.9rem 0 0.7rem; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
   p { margin: 0 0 0.7rem; }
   .lead { font-weight: 600; margin-bottom: 0.25rem; }
   ul { margin: 0 0 0.8rem; padding-left: 1.2rem; }
