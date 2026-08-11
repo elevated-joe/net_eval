@@ -250,9 +250,15 @@ export default function App() {
   const clientSlug =
     (data.fields.clientName || 'client').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client'
 
+  // Export file name: "<Report Name> - <Client Name>.pdf" (illegal path
+  // characters stripped, whitespace collapsed).
+  const clientName = ((data.fields.clientName ?? '').trim() || 'Client')
+  const pdfFilename = (reportName: string) => {
+    const clean = (s: string) => s.replace(/[<>:"/\\|?*]/g, '').replace(/\s+/g, ' ').trim()
+    return `${clean(reportName)} - ${clean(clientName)}.pdf`
+  }
+
   const exportJson = () => download(`${clientSlug}-network-evaluation.json`, JSON.stringify(data, null, 2), 'application/json')
-  const exportReport = () => download(`${clientSlug}-network-evaluation-report.html`, reportHtml, 'text/html')
-  const exportAssessment = () => download(`${clientSlug}-network-assessment.html`, assessmentHtml, 'text/html')
 
   const exportPdf = async (html: string, filename: string) => {
     // Generate the PDF entirely in the browser and download it directly — no
@@ -504,16 +510,14 @@ export default function App() {
                 <button
                   className="btn primary"
                   disabled={pdfBusy}
-                  onClick={() => exportPdf(reportHtml, `${clientSlug}-network-evaluation-report.pdf`)}
+                  onClick={() => exportPdf(reportHtml, pdfFilename('Internal Report'))}
                 >
                   {pdfBusy ? 'Generating PDF…' : 'Download PDF'}
                 </button>
-                <button className="btn" onClick={exportReport}>Download .html</button>
               </div>
             </div>
             <p className="section-desc">
-              Internal report with your evaluation data and any uploaded photos/diagrams. Download it as a PDF or as
-              standalone HTML.
+              Internal report with your evaluation data and any uploaded photos/diagrams. Download it as a PDF.
             </p>
             <iframe className="report-preview" title="Internal report preview" srcDoc={reportHtml} />
           </section>
@@ -529,11 +533,10 @@ export default function App() {
                 <button
                   className="btn primary"
                   disabled={pdfBusy}
-                  onClick={() => exportPdf(assessmentHtml, `${clientSlug}-network-assessment.pdf`)}
+                  onClick={() => exportPdf(assessmentHtml, pdfFilename('Assessment Report'))}
                 >
                   {pdfBusy ? 'Generating PDF…' : 'Download PDF'}
                 </button>
-                <button className="btn" onClick={exportAssessment}>Download .html</button>
               </div>
             </div>
             <p className="section-desc">
