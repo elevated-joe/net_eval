@@ -49,6 +49,8 @@ export const DOMAIN_OPTIONS = ['Domain', 'Entra ID (Azure AD)', 'Hybrid (AD + En
 export const MFA_COVERAGE_OPTIONS = ['All services', 'Webmail only', 'Partial', 'None', 'Unknown']
 export const FIREWALL_TYPE_OPTIONS = ['Next-gen (supported)', 'Open-source', 'Unknown']
 export const YES_NO_UNKNOWN = ['Yes', 'No', 'Unknown']
+export const HARDWARE_CONDITION_OPTIONS = ['Current', 'Mixed', 'Aging', 'End-of-life', 'Unknown']
+export const PATCH_MGMT_OPTIONS = ['Actively managed', 'Ad-hoc', 'Unmanaged', 'Unknown']
 
 /** Parse a checklist field's comma-separated value into selected options. */
 export function parseChecklist(value: string | undefined): string[] {
@@ -123,7 +125,9 @@ export const SECTIONS: SectionDef[] = [
     description: 'Add each internet circuit. Use “+ Add ISP” for multiple providers.',
     isp: true,
     notes: true,
-    fields: [],
+    fields: [
+      { key: 'failover', label: 'Automatic Failover Configured', type: 'select', options: YES_NO_UNKNOWN },
+    ],
   },
   {
     id: 'hardware',
@@ -138,6 +142,13 @@ export const SECTIONS: SectionDef[] = [
       { key: 'server', label: 'Server (Make/Model)', type: 'text', placeholder: 'e.g. Dell PowerEdge R650' },
       { key: 'pdu', label: 'PDU (Make/Model)', type: 'text', placeholder: 'e.g. APC AP8853' },
       { key: 'ups', label: 'UPS (Make/Model)', type: 'text', placeholder: 'e.g. APC Smart-UPS 3000' },
+      {
+        key: 'hardwareCondition',
+        label: 'Overall Hardware Condition',
+        type: 'select',
+        options: HARDWARE_CONDITION_OPTIONS,
+        hint: 'General age/support status of the network hardware.',
+      },
     ],
   },
   {
@@ -162,6 +173,7 @@ export const SECTIONS: SectionDef[] = [
       { key: 'av', label: 'AV / Endpoint Solution', type: 'text', placeholder: 'e.g. SentinelOne, CrowdStrike' },
       { key: 'contentFilter', label: 'Content Filtering Solution', type: 'text', placeholder: 'e.g. Cisco Umbrella' },
       { key: 'training', label: 'End-user Training', type: 'text', placeholder: 'e.g. KnowBe4' },
+      { key: 'patchManagement', label: 'Patch Management', type: 'select', options: PATCH_MGMT_OPTIONS },
       { key: 'remoteAccess', label: 'Remote Access Methods', type: 'text', placeholder: 'e.g. VPN, RDP, jump box' },
       { key: 'remoteAccessMfa', label: 'Remote Access MFA', type: 'select', options: YES_NO_UNKNOWN },
     ],
