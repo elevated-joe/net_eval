@@ -1,7 +1,7 @@
 // Field schema for the network evaluation intake form.
 //
 // This is the single source of truth: the form UI, the executive-summary
-// generator, and the client report are all derived from it. Field keys mirror
+// generator, and the internal report are all derived from it. Field keys mirror
 // the intake template used for network assessments.
 
 export type FieldType = 'text' | 'number' | 'textarea' | 'select' | 'checklist'
@@ -226,7 +226,7 @@ export interface ReportImage {
   caption: string
   /** Downscaled image encoded as a data URL, so the report stays self-contained. */
   dataUrl: string
-  /** Include this image in the Assessment Report (Client Report always shows all). */
+  /** Include this image in the Assessment Report (Internal Report always shows all). */
   inAssessment: boolean
   /** Assessment section id to place the image under, or '' for a general appendix. */
   section: string
@@ -244,7 +244,7 @@ export interface EvalData {
   fields: Record<string, string>
   /** Repeatable ISP circuits. */
   isps: IspEntry[]
-  /** Images embedded into the client report. */
+  /** Images embedded into the internal report. */
   images: ReportImage[]
   /** Manual edits to auto-drafted assessment text, keyed by block id (e.g. 'exec', 'finding__backup'). */
   assessmentText: Record<string, string>
