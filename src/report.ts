@@ -140,6 +140,8 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   .images img { max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; display: block; }
   .images figcaption { font-size: 0.82rem; color: #4a5a6a; margin-top: 0.35rem; }
   footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
+  /* Remove the browser's default print header/footer (date, title, URL, page number). */
+  @page { size: letter; margin: 0; }
   @media print {
     body { background: #fff; }
     .page { box-shadow: none; margin: 0; max-width: none; padding: 0.5in; }
