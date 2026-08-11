@@ -36,6 +36,8 @@ export interface AssessmentSection {
   indicator?: string
   /** Reason line for the risk-priorities table. */
   reason?: string
+  /** Excluded from the generated report (set by buildAssessment). */
+  hidden?: boolean
 }
 
 export interface PriorityRow {
@@ -479,7 +481,7 @@ export function buildAssessment(d: EvalData): Assessment {
     organizationSection(d),
   ]
 
-  // Record the auto rating and apply any manual rating override.
+  // Record the auto rating, apply any manual rating override, and mark hidden.
   for (const s of sections) {
     s.autoRating = s.rating
     const ov = d.assessmentText?.[`rating__${s.id}`]
@@ -489,10 +491,13 @@ export function buildAssessment(d: EvalData): Assessment {
     } else {
       s.ratingOverridden = false
     }
+    s.hidden = d.hiddenSections?.includes(s.id) ?? false
   }
 
-  const atRisk = sections.filter((s) => s.rating === 'At Risk')
-  const attention = sections.filter((s) => s.rating === 'Attention')
+  // Rollups consider only sections included in the report.
+  const visible = sections.filter((s) => !s.hidden)
+  const atRisk = visible.filter((s) => s.rating === 'At Risk')
+  const attention = visible.filter((s) => s.rating === 'Attention')
   const overallRating = ratingFor(atRisk.length, attention.length)
 
   const scaleParts: string[] = []

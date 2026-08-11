@@ -35,7 +35,9 @@ compiles the collected data into a client-presentable report. Built with
   risk-priorities table and next steps. Every recommendation and finding is
   **editable** (with reset-to-auto-draft) before export, and each section's
   **rating can be overridden manually** — the override rolls up into the
-  overall risk rating, key focus areas, and priorities table.
+  overall risk rating, key focus areas, and priorities table. Sections can also
+  be **excluded from the report** with a checkbox; excluded sections drop out of
+  the output and stop counting toward the rollups.
 - Both reports: preview in-app, **download as standalone HTML**, or
   **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).

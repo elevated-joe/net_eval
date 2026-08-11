@@ -466,6 +466,47 @@ select:focus {
   font-size: 0.78rem;
 }
 
+.exclude-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.exclude-toggle input {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.excluded-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.assess-section.excluded {
+  border-left-color: var(--border);
+  opacity: 0.55;
+}
+
+.assess-section.excluded .assess-block {
+  display: none;
+}
+
 .assess-section .assess-block {
   border: none;
   padding: 0;

@@ -237,6 +237,8 @@ export interface EvalData {
   images: ReportImage[]
   /** Manual edits to auto-drafted assessment text, keyed by block id (e.g. 'exec', 'finding__backup'). */
   assessmentText: Record<string, string>
+  /** Assessment section ids excluded from the generated report. */
+  hiddenSections: string[]
 }
 
 /** localStorage key for section notes: notes__<sectionId>. */
@@ -249,7 +251,7 @@ export function emptyData(): EvalData {
   const fields: Record<string, string> = {}
   for (const f of ALL_FIELDS) fields[f.key] = ''
   for (const s of SECTIONS) if (s.notes) fields[notesKey(s.id)] = ''
-  return { fields, isps: [{ provider: '', speed: '' }], images: [], assessmentText: {} }
+  return { fields, isps: [{ provider: '', speed: '' }], images: [], assessmentText: {}, hiddenSections: [] }
 }
 
 /** ISP entries that have at least a provider or a speed filled in. */

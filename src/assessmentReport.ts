@@ -54,6 +54,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
     : ''
 
   const sectionsHtml = a.sections
+    .filter((s) => !s.hidden)
     .map((s) => {
       const finding = effectiveText(d, `finding__${s.id}`, s.finding)
       const client = effectiveText(d, `client__${s.id}`, s.clientRecommendation)
