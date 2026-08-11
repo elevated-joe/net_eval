@@ -254,18 +254,33 @@ export default function App() {
   const exportAssessment = () => download(`${clientSlug}-network-assessment.html`, assessmentHtml, 'text/html')
 
   const printHtml = (html: string) => {
-    const w = window.open('', '_blank')
-    if (!w) {
-      alert('Please allow pop-ups to open the printable report.')
-      return
+    // Print via a hidden in-page iframe rather than window.open — mobile
+    // browsers block the pop-up window, but an iframe print needs no pop-up and
+    // still opens the native print sheet (which includes Save to PDF / Files).
+    const iframe = document.createElement('iframe')
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;'
+    iframe.onload = () => {
+      const cw = iframe.contentWindow
+      if (!cw) {
+        iframe.remove()
+        return
+      }
+      const cleanup = () => {
+        if (document.body.contains(iframe)) iframe.remove()
+      }
+      cw.onafterprint = () => setTimeout(cleanup, 300)
+      try {
+        cw.focus()
+        cw.print()
+      } catch {
+        cleanup()
+      }
+      // Fallback: some mobile browsers never fire afterprint.
+      setTimeout(cleanup, 60000)
     }
-    w.document.open()
-    w.document.write(html)
-    w.document.close()
-    w.onload = () => {
-      w.focus()
-      w.print()
-    }
+    iframe.srcdoc = html
+    document.body.appendChild(iframe)
   }
 
   const importJson = (file: File) => {
