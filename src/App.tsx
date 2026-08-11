@@ -25,6 +25,7 @@ function hydrate(parsed: Partial<EvalData>): EvalData {
     images: Array.isArray(parsed.images) ? parsed.images : base.images,
     assessmentText:
       parsed.assessmentText && typeof parsed.assessmentText === 'object' ? parsed.assessmentText : base.assessmentText,
+    hiddenSections: Array.isArray(parsed.hiddenSections) ? parsed.hiddenSections : base.hiddenSections,
   }
 }
 
@@ -117,6 +118,15 @@ export default function App() {
       const next = { ...prev.assessmentText }
       delete next[blockId]
       return { ...prev, assessmentText: next }
+    })
+  }, [])
+
+  const toggleHiddenSection = useCallback((id: string) => {
+    setData((prev) => {
+      const hidden = prev.hiddenSections.includes(id)
+        ? prev.hiddenSections.filter((x) => x !== id)
+        : [...prev.hiddenSections, id]
+      return { ...prev, hiddenSections: hidden }
     })
   }, [])
 
@@ -457,24 +467,30 @@ export default function App() {
               onReset={clearAssessmentOverride}
             />
             {assessment.sections.map((s) => (
-              <div key={s.id} className="assess-section">
+              <div key={s.id} className={`assess-section ${s.hidden ? 'excluded' : ''}`}>
                 <div className="assess-section-head">
                   <h3>
                     {s.title}
                     <span className={`ga-pill ${RATING_CLASS[s.rating] ?? 'info'}`}>{s.rating}</span>
+                    {s.hidden && <span className="excluded-tag">Excluded</span>}
                   </h3>
                   <div className="rating-control">
+                    <label className="exclude-toggle" title="Exclude this section from the report">
+                      <input type="checkbox" checked={!!s.hidden} onChange={() => toggleHiddenSection(s.id)} />
+                      Exclude
+                    </label>
                     <label htmlFor={`rating__${s.id}`}>Impact</label>
                     <select
                       id={`rating__${s.id}`}
                       value={s.rating}
+                      disabled={s.hidden}
                       onChange={(e) => setAssessmentOverride(`rating__${s.id}`, e.target.value)}
                     >
                       {RATINGS.map((r) => (
                         <option key={r} value={r}>{r}</option>
                       ))}
                     </select>
-                    {s.ratingOverridden && (
+                    {s.ratingOverridden && !s.hidden && (
                       <button
                         className="btn subtle rating-reset"
                         onClick={() => clearAssessmentOverride(`rating__${s.id}`)}
