@@ -34,6 +34,36 @@ function waitForImages(doc: Document): Promise<void> {
 }
 
 /**
+ * Height of the canvas up to the last row containing real (non-white) content,
+ * plus a small bottom margin. Trims trailing blank space (the page's bottom
+ * padding) so the last PDF page ends tight and no whitespace-only page is ever
+ * produced. Returns the full height if trimming isn't possible.
+ */
+function trimmedHeight(canvas: HTMLCanvasElement): number {
+  const { width: W, height: H } = canvas
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return H
+  const slab = Math.min(H, Math.max(500, Math.round(H * 0.2)))
+  const startY = H - slab
+  let data: Uint8ClampedArray
+  try {
+    data = ctx.getImageData(0, startY, W, slab).data
+  } catch {
+    return H
+  }
+  const margin = Math.round(0.25 * 96 * SCALE) // ~0.25in breathing room below content
+  for (let row = slab - 1; row >= 0; row--) {
+    for (let x = 0; x < W; x += 8) {
+      const i = (row * W + x) * 4
+      if (data[i + 3] > 8 && (data[i] < 245 || data[i + 1] < 245 || data[i + 2] < 245)) {
+        return Math.min(H, startY + row + margin)
+      }
+    }
+  }
+  return H // bottom slab is entirely blank — leave as-is
+}
+
+/**
  * Render `html` and save it as `filename` (a direct PDF download).
  * Resolves once the file has been handed to the browser.
  */
@@ -78,6 +108,9 @@ export async function exportHtmlAsPdf(html: string, filename: string): Promise<v
     const W = canvas.width
     const H = canvas.height
     if (!W || !H) throw new Error('Nothing to render.')
+    // Paginate up to the last real content, not the full canvas (which includes
+    // the page's bottom padding), so the last page ends tight — never blank.
+    const contentH = trimmedHeight(canvas)
 
     const pdf = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' })
     const pageWpt = pdf.internal.pageSize.getWidth()
@@ -88,11 +121,11 @@ export async function exportHtmlAsPdf(html: string, filename: string): Promise<v
 
     // Candidate break offsets (canvas px), measured from the top of the page.
     const pageTop = page.getBoundingClientRect().top
-    const breakSet = new Set<number>([0, H])
+    const breakSet = new Set<number>([0, contentH])
     const collect = (sel: string) =>
       doc.querySelectorAll(sel).forEach((el) => {
         const y = Math.round((el.getBoundingClientRect().top - pageTop) * SCALE)
-        if (y > 0 && y < H) breakSet.add(y)
+        if (y > 0 && y < contentH) breakSet.add(y)
       })
     // Break only at top-level block boundaries so a section stays whole (its
     // heading is never orphaned from its content — it moves to the next page as
@@ -112,16 +145,16 @@ export async function exportHtmlAsPdf(html: string, filename: string): Promise<v
 
     let y = 0
     let pageIndex = 0
-    while (y < H - 1) {
+    while (y < contentH - 1) {
       const hardLimit = y + pagePx
       let end: number
       if (forced > y && forced <= hardLimit) {
         end = forced
       } else {
         const soft = breaks.filter((b) => b > y && b <= hardLimit)
-        end = soft.length ? soft[soft.length - 1] : Math.min(hardLimit, H)
+        end = soft.length ? soft[soft.length - 1] : Math.min(hardLimit, contentH)
       }
-      if (end <= y) end = Math.min(hardLimit, H) // safety for a block taller than a page
+      if (end <= y) end = Math.min(hardLimit, contentH) // safety for a block taller than a page
 
       const hpx = end - y
       const slice = document.createElement('canvas')
