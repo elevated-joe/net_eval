@@ -52,9 +52,9 @@ compiles the collected data into a client-presentable report. Built with
   - **Report options**: an optional **cover page**, and a toggle to **exclude
     the technical detail** (client recommendations only) from the Assessment
     Report export.
-- Both reports: preview in-app, **download as a PDF** (generated in the
+- Both reports: preview in-app and **download as a PDF** (generated in the
   browser and saved directly — no print dialog and no new tab, so it works the
-  same on desktop and mobile), or **download as standalone HTML**.
+  same on desktop and mobile). The PDF is named `<Report> - <Client>.pdf`.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
 - No backend, no network calls — works offline once loaded.
 
