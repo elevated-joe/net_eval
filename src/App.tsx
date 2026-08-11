@@ -9,7 +9,7 @@ import {
   type ReportImage,
 } from './schema'
 import { buildReportHtml } from './report'
-import { buildAssessment, RATINGS } from './assessment'
+import { buildAssessment, RATINGS, ASSESSMENT_SECTIONS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
 import { runAiAnalysis, AI_MODELS } from './aiAnalysis'
 
@@ -23,13 +23,27 @@ type View = 'form' | 'report' | 'assessment'
 
 function hydrate(parsed: Partial<EvalData>): EvalData {
   const base = emptyData()
+  const images: ReportImage[] = Array.isArray(parsed.images)
+    ? parsed.images.map((im) => ({
+        id: im.id,
+        name: im.name,
+        caption: im.caption ?? '',
+        dataUrl: im.dataUrl,
+        inAssessment: typeof im.inAssessment === 'boolean' ? im.inAssessment : false,
+        section: typeof im.section === 'string' ? im.section : '',
+      }))
+    : base.images
   return {
     fields: { ...base.fields, ...(parsed.fields ?? {}) },
     isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
-    images: Array.isArray(parsed.images) ? parsed.images : base.images,
+    images,
     assessmentText:
       parsed.assessmentText && typeof parsed.assessmentText === 'object' ? parsed.assessmentText : base.assessmentText,
     hiddenSections: Array.isArray(parsed.hiddenSections) ? parsed.hiddenSections : base.hiddenSections,
+    reportOptions: {
+      coverPage: parsed.reportOptions?.coverPage ?? base.reportOptions.coverPage,
+      techDetail: parsed.reportOptions?.techDetail ?? base.reportOptions.techDetail,
+    },
   }
 }
 
@@ -79,6 +93,8 @@ function processImageFile(file: File): Promise<ReportImage> {
           name: file.name,
           caption: '',
           dataUrl,
+          inAssessment: false,
+          section: '',
         })
       }
       img.src = String(reader.result)
@@ -198,12 +214,16 @@ export default function App() {
     if (processed.length) setData((prev) => ({ ...prev, images: [...prev.images, ...processed] }))
   }, [])
 
-  const updateImageCaption = useCallback((id: string, caption: string) => {
-    setData((prev) => ({ ...prev, images: prev.images.map((im) => (im.id === id ? { ...im, caption } : im)) }))
+  const updateImage = useCallback((id: string, patch: Partial<ReportImage>) => {
+    setData((prev) => ({ ...prev, images: prev.images.map((im) => (im.id === id ? { ...im, ...patch } : im)) }))
   }, [])
 
   const removeImage = useCallback((id: string) => {
     setData((prev) => ({ ...prev, images: prev.images.filter((im) => im.id !== id) }))
+  }, [])
+
+  const setReportOption = useCallback((patch: Partial<EvalData['reportOptions']>) => {
+    setData((prev) => ({ ...prev, reportOptions: { ...prev.reportOptions, ...patch } }))
   }, [])
 
   const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso() }), [data])
@@ -415,8 +435,28 @@ export default function App() {
                             className="image-caption"
                             placeholder="Caption (optional)"
                             value={im.caption}
-                            onChange={(e) => updateImageCaption(im.id, e.target.value)}
+                            onChange={(e) => updateImage(im.id, { caption: e.target.value })}
                           />
+                          <label className="image-include">
+                            <input
+                              type="checkbox"
+                              checked={im.inAssessment}
+                              onChange={(e) => updateImage(im.id, { inAssessment: e.target.checked })}
+                            />
+                            Include in assessment
+                          </label>
+                          {im.inAssessment && (
+                            <select
+                              className="image-section"
+                              value={im.section}
+                              onChange={(e) => updateImage(im.id, { section: e.target.value })}
+                            >
+                              <option value="">General / appendix</option>
+                              {ASSESSMENT_SECTIONS.map((s) => (
+                                <option key={s.id} value={s.id}>{s.title}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -487,13 +527,33 @@ export default function App() {
               Recommended actions and the risk-priorities table are generated automatically.
             </p>
 
-            <details className="ai-panel">
-              <summary>AI analysis (optional) — reads your notes and correlates answers</summary>
+            <div className="report-options">
+              <span className="report-options-label">Report options:</span>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={data.reportOptions.coverPage}
+                  onChange={(e) => setReportOption({ coverPage: e.target.checked })}
+                />
+                Cover page
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={data.reportOptions.techDetail}
+                  onChange={(e) => setReportOption({ techDetail: e.target.checked })}
+                />
+                Include technical detail
+              </label>
+            </div>
+
+            <section className="ai-panel">
+              <h3 className="ai-title">AI Analysis (optional)</h3>
               <p className="ai-note">
-                Sends the full form (including notes) to the Anthropic API using <strong>your own API key</strong> to draft a
-                context-aware assessment. The key is stored only in this browser (localStorage) and sent directly to Anthropic;
-                it is <strong>not</strong> included in JSON exports. Runs cost money against your account. The rule-based draft
-                works with no key.
+                Reads the full form (including notes) via the Anthropic API using <strong>your own API key</strong> to draft a
+                context-aware assessment that correlates answers across sections. The key is stored only in this browser
+                (localStorage) and sent directly to Anthropic; it is <strong>not</strong> included in JSON exports. Runs cost
+                money against your account. The rule-based draft below works with no key.
               </p>
               <div className="ai-controls">
                 <input
@@ -515,7 +575,7 @@ export default function App() {
                 <button className="btn subtle" onClick={clearAllOverrides}>Reset to auto-draft</button>
               </div>
               {aiStatus.message && <p className={`ai-status ai-${aiStatus.state}`}>{aiStatus.message}</p>}
-            </details>
+            </section>
 
             <AssessmentEditor
               blockId="exec"

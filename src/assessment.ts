@@ -13,6 +13,17 @@ export type Rating = 'Good' | 'Attention' | 'At Risk' | 'Informational' | 'Not A
 
 export const RATINGS: Rating[] = ['At Risk', 'Attention', 'Good', 'Informational', 'Not Assessed']
 
+/** The assessment sections, in report order — used for image alignment and placement. */
+export const ASSESSMENT_SECTIONS: { id: string; title: string }[] = [
+  { id: 'identity', title: 'Identity & Microsoft 365' },
+  { id: 'connectivity', title: 'Internet & Connectivity' },
+  { id: 'hardware', title: 'Network & Infrastructure Hardware' },
+  { id: 'platform', title: 'Virtualization & Data Protection' },
+  { id: 'security', title: 'Email & Endpoint Security' },
+  { id: 'tools', title: 'Management & Business Tools' },
+  { id: 'organization', title: 'Organization & Compliance' },
+]
+
 export function isRating(v: string): v is Rating {
   return (RATINGS as string[]).includes(v)
 }

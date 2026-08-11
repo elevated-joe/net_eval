@@ -23,8 +23,10 @@ compiles the collected data into a client-presentable report. Built with
   management, and remote-access MFA.
 - **Per-section notes** captured on every section and carried into the report.
 - **Photos & diagrams** — upload network diagrams, rack photos, or screenshots
-  (auto-downscaled and embedded as data URLs) with optional captions; they
-  appear in the client report.
+  (auto-downscaled and embedded as data URLs) with optional captions. They
+  always appear in the Client Report; each image can also be **included in the
+  Assessment Report** and **aligned to a specific section** (or a general
+  appendix).
 - **Client Report** — a professional, client-presentable document with a cover
   header, per-section data tables, and the uploaded photos/diagrams.
 - **Assessment Report** — an auto-drafted narrative assessment generated from
@@ -47,6 +49,9 @@ compiles the collected data into a client-presentable report. Built with
     that correlates answers across sections. Results write into the same
     editable overrides. The key is stored only in your browser and is never
     included in JSON exports.
+  - **Report options**: an optional **cover page**, and a toggle to **exclude
+    the technical detail** (client recommendations only) from the Assessment
+    Report export.
 - Both reports: preview in-app, **download as standalone HTML**, or
   **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
