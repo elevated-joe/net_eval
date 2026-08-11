@@ -1,9 +1,8 @@
 # net_eval
 
 A self-contained **network evaluation** web app — a structured intake form that
-compiles the collected data into an **executive summary** with automatic
-observations (risks and gaps). Built with **React + TypeScript + Vite** and
-deployed as a static site to GitHub Pages.
+compiles the collected data into a client-presentable report. Built with
+**React + TypeScript + Vite** and deployed as a static site to GitHub Pages.
 
 ## Features
 
@@ -17,16 +16,17 @@ deployed as a static site to GitHub Pages.
   NIST 800-171 / CMMC, GDPR, GLBA, FERPA, SOX, Other).
 - **Repeatable ISP list** — add/remove circuits with a **+ Add ISP** button.
 - **Per-section notes** captured on every section and carried into the report.
-- **Support Plan Gap Analysis** — maps the client's current-state answers
-  against the Elevated MSP **Peace of Mind** plan (Co-Managed / Remote /
-  Standard / Enterprise), flags missing managed controls (EDR, MFA, email
-  security, training, backups), lists resilience/best-practice notes, and
-  suggests a starting plan tier.
+- **Photos & diagrams** — upload network diagrams, rack photos, or screenshots
+  (auto-downscaled and embedded as data URLs) with optional captions; they
+  appear in the report.
 - **Client Report** — a professional, client-presentable document with a cover
-  header, per-section data tables, and the Peace of Mind gap analysis. Preview
-  it in-app, **download as standalone HTML**, or **Print → Save as PDF**.
-- **Autosave** to `localStorage`, plus **JSON export/import**.
+  header, per-section data tables, and the uploaded photos/diagrams. Preview it
+  in-app, **download as standalone HTML**, or **Print → Save as PDF**.
+- **Autosave** to `localStorage`, plus **JSON export/import** (images included).
 - No backend, no network calls — works offline once loaded.
+
+> The Peace of Mind support-plan gap analysis (`src/supportPlan.ts`) is retained
+> in the repo but currently unwired from the UI.
 
 ## Development
 
@@ -53,9 +53,9 @@ net_eval/
 ├── index.html
 ├── src/
 │   ├── main.tsx        # React entry point
-│   ├── App.tsx         # form + summary UI
+│   ├── App.tsx         # form + report UI
 │   ├── schema.ts       # field definitions (single source of truth)
-│   ├── supportPlan.ts  # Peace of Mind support-plan gap analysis
+│   ├── supportPlan.ts  # Peace of Mind gap analysis (currently unwired)
 │   ├── report.ts       # client-presentable HTML report generator
 │   └── styles.css
 ├── vite.config.ts
