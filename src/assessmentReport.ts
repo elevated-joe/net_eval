@@ -162,6 +162,8 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   .pill.medium { background: #fef0d3; color: #b25e09; }
   .pill.good { background: #d6f2e0; color: #0a6b3b; }
   .pill.info { background: #e2e8f0; color: #475569; }
+  /* Remove the browser's default print header/footer (date, title, URL, page number). */
+  @page { size: letter; margin: 0; }
   @media print {
     body { background: #fff; }
     .page { box-shadow: none; margin: 0; max-width: none; padding: 0.5in; }
