@@ -130,7 +130,6 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
             <div><span>Date</span>${esc(date)}</div>
             ${preparedBy ? `<div><span>Prepared by</span>${esc(preparedBy)}</div>` : ''}
           </div>
-          <div class="cover-confidential">Confidential — prepared for ${esc(client)}.</div>
         </div>
       </section>`
     : `<header class="inline-head">${logo ? `<img class="cover-logo" src="${logo}" alt="">` : ''}<h1>${esc(client)}</h1><div class="meta"><span>${esc(date)}</span>${preparedBy ? `<span>Prepared by ${esc(preparedBy)}</span>` : ''}</div></header>`
@@ -154,7 +153,6 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   .cover-rule { height: 3px; background: #e2e8f0; margin-top: 1.4rem; }
   .cover-meta { display: flex; gap: 3rem; color: #33465a; font-size: 1rem; }
   .cover-meta span { display: block; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.68rem; color: #8895a3; margin-bottom: 0.15rem; }
-  .cover-confidential { margin-top: 1.1rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.78rem; }
   .inline-head { border-bottom: 4px solid #1f6feb; padding-bottom: 0.9rem; margin-bottom: 1.25rem; }
   .inline-head h1 { margin: 0 0 0.35rem; font-size: 2rem; }
   .inline-head .meta { display: flex; gap: 1.5rem; color: #4a5a6a; font-size: 0.9rem; }
