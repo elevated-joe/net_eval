@@ -210,6 +210,53 @@ select:focus {
   color: var(--muted);
 }
 
+/* Image manager */
+.image-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.9rem;
+}
+
+.image-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.image-thumb-wrap {
+  position: relative;
+}
+
+.image-thumb {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  display: block;
+}
+
+.image-remove {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(15, 23, 32, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.image-caption {
+  font-size: 0.82rem;
+  padding: 0.4rem 0.55rem;
+}
+
 /* ISP repeatable rows */
 .isp-list {
   display: flex;

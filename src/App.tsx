@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { SECTIONS, emptyData, notesKey, type EvalData, type IspEntry } from './schema'
-import { buildGapAnalysis } from './supportPlan'
+import { SECTIONS, emptyData, notesKey, type EvalData, type IspEntry, type ReportImage } from './schema'
 import { buildReportHtml } from './report'
 
 const STORAGE_KEY = 'net_eval.data.v2'
+const MAX_IMAGE_DIM = 1600
 
-type View = 'form' | 'gaps' | 'report'
+type View = 'form' | 'report'
+
+function hydrate(parsed: Partial<EvalData>): EvalData {
+  const base = emptyData()
+  return {
+    fields: { ...base.fields, ...(parsed.fields ?? {}) },
+    isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
+    images: Array.isArray(parsed.images) ? parsed.images : base.images,
+  }
+}
 
 function loadData(): EvalData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<EvalData>
-      const base = emptyData()
-      return {
-        fields: { ...base.fields, ...(parsed.fields ?? {}) },
-        isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
-      }
-    }
+    if (raw) return hydrate(JSON.parse(raw) as Partial<EvalData>)
   } catch {
     /* ignore malformed storage */
   }
@@ -29,16 +31,56 @@ function todayIso(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/** Read an image file, downscale to a max dimension, and encode as a data URL. */
+function processImageFile(file: File): Promise<ReportImage> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('read failed'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('decode failed'))
+      img.onload = () => {
+        let { width, height } = img
+        if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
+          const scale = MAX_IMAGE_DIM / Math.max(width, height)
+          width = Math.round(width * scale)
+          height = Math.round(height * scale)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('no canvas context'))
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        const dataUrl =
+          file.type === 'image/png' ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.85)
+        resolve({
+          id: `${Date.now()}-${Math.round(Math.random() * 1e6)}`,
+          name: file.name,
+          caption: '',
+          dataUrl,
+        })
+      }
+      img.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function App() {
   const [data, setData] = useState<EvalData>(loadData)
   const [view, setView] = useState<View>('form')
   const fileInput = useRef<HTMLInputElement>(null)
+  const imageInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     } catch {
-      /* storage may be unavailable (private mode) */
+      /* storage may be unavailable or full (e.g. many large images) */
     }
   }, [data])
 
@@ -64,7 +106,27 @@ export default function App() {
     }))
   }, [])
 
-  const gap = useMemo(() => buildGapAnalysis(data), [data])
+  const addImages = useCallback(async (files: FileList) => {
+    const processed: ReportImage[] = []
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue
+      try {
+        processed.push(await processImageFile(file))
+      } catch {
+        /* skip files that fail to decode */
+      }
+    }
+    if (processed.length) setData((prev) => ({ ...prev, images: [...prev.images, ...processed] }))
+  }, [])
+
+  const updateImageCaption = useCallback((id: string, caption: string) => {
+    setData((prev) => ({ ...prev, images: prev.images.map((im) => (im.id === id ? { ...im, caption } : im)) }))
+  }, [])
+
+  const removeImage = useCallback((id: string) => {
+    setData((prev) => ({ ...prev, images: prev.images.filter((im) => im.id !== id) }))
+  }, [])
+
   const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso() }), [data])
 
   const filledCount = useMemo(() => {
@@ -108,12 +170,7 @@ export default function App() {
     const reader = new FileReader()
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(String(reader.result)) as Partial<EvalData>
-        const base = emptyData()
-        setData({
-          fields: { ...base.fields, ...(parsed.fields ?? {}) },
-          isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
-        })
+        setData(hydrate(JSON.parse(String(reader.result)) as Partial<EvalData>))
       } catch {
         alert('Could not parse that file — expected JSON exported from this tool.')
       }
@@ -130,7 +187,7 @@ export default function App() {
       <header className="app-header">
         <div>
           <h1>Network Evaluation</h1>
-          <p className="subtitle">Complete the intake form, then review Peace of Mind gaps and generate a client report.</p>
+          <p className="subtitle">Complete the intake form, then generate a client-ready report.</p>
         </div>
         <div className="progress" aria-label="Fields completed">
           <span className="progress-count">{filledCount}</span>
@@ -140,9 +197,6 @@ export default function App() {
 
       <nav className="tabs">
         <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
-        <button className={`tab ${view === 'gaps' ? 'active' : ''}`} onClick={() => setView('gaps')}>
-          Support Plan Gaps{gap.gaps.length ? ` (${gap.gaps.length})` : ''}
-        </button>
         <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Client Report</button>
         <div className="tabs-spacer" />
         <button className="btn" onClick={exportJson}>Export data</button>
@@ -240,6 +294,49 @@ export default function App() {
                 </div>
               )}
 
+              {section.images && (
+                <div className="image-manager">
+                  {data.images.length > 0 && (
+                    <div className="image-grid">
+                      {data.images.map((im) => (
+                        <div key={im.id} className="image-item">
+                          <div className="image-thumb-wrap">
+                            <img className="image-thumb" src={im.dataUrl} alt={im.caption || im.name} />
+                            <button
+                              className="btn subtle image-remove"
+                              onClick={() => removeImage(im.id)}
+                              title="Remove image"
+                              aria-label="Remove image"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            className="image-caption"
+                            placeholder="Caption (optional)"
+                            value={im.caption}
+                            onChange={(e) => updateImageCaption(im.id, e.target.value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button className="btn add-isp" onClick={() => imageInput.current?.click()}>+ Add images</button>
+                  <input
+                    ref={imageInput}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      if (e.target.files?.length) void addImages(e.target.files)
+                      e.target.value = ''
+                    }}
+                  />
+                </div>
+              )}
+
               {section.notes && (
                 <div className="field field-wide section-notes">
                   <label htmlFor={notesKey(section.id)}>Section Notes</label>
@@ -257,69 +354,6 @@ export default function App() {
         </main>
       )}
 
-      {view === 'gaps' && (
-        <main className="gaps-view">
-          <section className="card">
-            <h2>Peace of Mind Support Plan — Gap Analysis</h2>
-            <div className="rec-banner">
-              <strong>{gap.gaps.length}</strong> managed-security gap{gap.gaps.length === 1 ? '' : 's'} identified. Suggested
-              starting plan: <strong>{gap.recommendedTier}</strong>.
-            </div>
-            <p className="section-desc">{gap.rationale}</p>
-            <table className="ga-table">
-              <thead>
-                <tr><th>Managed Control</th><th>Current State</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {gap.coverage.map((r) => (
-                  <tr key={r.control}>
-                    <td>
-                      {r.control}
-                      <span className="ga-cat">{r.category}</span>
-                    </td>
-                    <td>{r.currentState}</td>
-                    <td>
-                      <span className={`ga-pill ${r.status === 'gap' ? 'gap' : 'ok'}`}>
-                        {r.status === 'gap' ? 'Gap' : 'In place'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          {gap.advisories.length > 0 && (
-            <section className="card observations">
-              <h2>Resilience & Best-Practice Notes</h2>
-              <ul>
-                {gap.advisories.map((a, i) => (
-                  <li key={i} className={`obs obs-${a.severity}`}>
-                    <span className="obs-tag">{a.severity}</span>
-                    {a.text}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <section className="card">
-            <h2>Enterprise Managed Hardware</h2>
-            <p className="section-desc">Optional upgrade — fold this hardware into Elevated Managed Hardware under the Enterprise plan.</p>
-            <table className="ga-table">
-              <tbody>
-                {gap.managedHardware.map((h) => (
-                  <tr key={h.item}>
-                    <td>{h.item}</td>
-                    <td>Current: {h.currentState}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        </main>
-      )}
-
       {view === 'report' && (
         <main className="report-view">
           <section className="card">
@@ -331,8 +365,8 @@ export default function App() {
               </div>
             </div>
             <p className="section-desc">
-              Client-presentable report with the Peace of Mind gap analysis. Use “Print / Save as PDF” for a PDF deliverable, or
-              download the standalone HTML.
+              Client-presentable report with your evaluation data and any uploaded photos/diagrams. Use “Print / Save as PDF” for
+              a PDF deliverable, or download the standalone HTML.
             </p>
             <iframe className="report-preview" title="Client report preview" srcDoc={reportHtml} />
           </section>

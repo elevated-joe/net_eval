@@ -2,12 +2,11 @@
 //
 // Produces a complete, standalone HTML document (inline styles, print-optimized
 // for US Letter) that presents the evaluation data professionally: a cover
-// header, per-section data tables, and a Peace of Mind support-plan gap
-// analysis. The same HTML is used for on-screen preview, download, and
-// Print → Save as PDF, so what you see is what you send.
+// header, per-section data tables, and any uploaded photos/diagrams. The same
+// HTML is used for on-screen preview, download, and Print → Save as PDF, so
+// what you see is what you send.
 
 import { activeIsps, SECTIONS, notesKey, type EvalData } from './schema'
-import { buildGapAnalysis } from './supportPlan'
 
 function esc(s: string): string {
   return s
@@ -88,45 +87,21 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
     }
   }
 
-  // Peace of Mind support-plan gap analysis
-  const ga = buildGapAnalysis(d)
-
-  const coverageRows = ga.coverage
-    .map((r) => {
-      const label = r.status === 'gap' ? 'Gap' : 'In place'
-      const cls = r.status === 'gap' ? 'risk' : 'ok'
-      return `<tr><td>${esc(r.control)}</td><td>${esc(r.currentState)}</td><td><span class="pill ${cls}">${label}</span></td></tr>`
-    })
-    .join('')
-
-  const advisoryRows = ga.advisories
-    .map((a) => {
-      const label = a.severity === 'risk' ? 'Risk' : a.severity === 'gap' ? 'Gap' : 'Note'
-      return `<tr><td><span class="pill ${a.severity}">${label}</span></td><td>${esc(a.text)}</td></tr>`
-    })
-    .join('')
-
-  const hwRows = ga.managedHardware
-    .map((h) => `<tr><th>${esc(h.item)}</th><td>Current: ${esc(h.currentState)}</td></tr>`)
-    .join('')
-
-  const recsHtml =
-    '<section class="recs"><h2>Peace of Mind Support Plan — Gap Analysis</h2>' +
-    `<p class="rec-banner"><strong>${ga.gaps.length}</strong> managed-security gap(s) identified. ` +
-    `Suggested starting plan: <strong>${esc(ga.recommendedTier)}</strong>.</p>` +
-    `<p class="note">${esc(ga.rationale)}</p>` +
-    '<table class="data"><thead><tr><th>Managed Control</th><th>Current State</th><th>Status</th></tr></thead><tbody>' +
-    coverageRows +
-    '</tbody></table>' +
-    (advisoryRows
-      ? '<h2>Resilience &amp; Best-Practice Notes</h2><table class="data"><thead><tr><th>Priority</th><th>Finding</th></tr></thead><tbody>' +
-        advisoryRows +
-        '</tbody></table>'
-      : '') +
-    '<h2>Enterprise Managed Hardware (optional upgrade)</h2><table class="data"><tbody>' +
-    hwRows +
-    '</tbody></table>' +
-    '</section>'
+  // Photos & diagrams
+  let imagesHtml = ''
+  if (d.images.length) {
+    imagesHtml =
+      '<section class="images"><h2>Photos &amp; Diagrams</h2>' +
+      d.images
+        .map(
+          (img) =>
+            `<figure><img src="${img.dataUrl}" alt="${esc(img.caption || img.name)}">` +
+            (has(img.caption) ? `<figcaption>${esc(img.caption)}</figcaption>` : '') +
+            '</figure>',
+        )
+        .join('') +
+      '</section>'
+  }
 
   return `<!doctype html>
 <html lang="en">
@@ -161,18 +136,16 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   table.data thead th { background: #eef3f8; font-weight: 700; }
   .note { font-size: 0.88rem; color: #4a5a6a; margin: 0.6rem 0 0; padding: 0.55rem 0.7rem; background: #f7f9fb; border-left: 3px solid #cbd5e1; }
   .pill { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.12rem 0.5rem; border-radius: 999px; }
-  .pill.risk { background: #fde2e1; color: #b42318; }
-  .pill.gap  { background: #fef0d3; color: #b25e09; }
-  .pill.note { background: #d8eefe; color: #0b5cad; }
-  .pill.ok   { background: #d6f2e0; color: #0a6b3b; }
-  .rec-banner { background: #eef3f8; border-left: 4px solid #1f6feb; padding: 0.6rem 0.85rem; font-size: 0.92rem; margin: 0.5rem 0 0.75rem; }
-  .exec { white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; background: #f7f9fb; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.9rem 1rem; }
+  .images figure { margin: 0 0 1.1rem; page-break-inside: avoid; }
+  .images img { max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; display: block; }
+  .images figcaption { font-size: 0.82rem; color: #4a5a6a; margin-top: 0.35rem; }
   footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
   @media print {
     body { background: #fff; }
     .page { box-shadow: none; margin: 0; max-width: none; padding: 0.5in; }
     section { page-break-inside: avoid; }
     h2 { page-break-after: avoid; }
+    .images figure { page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -187,7 +160,7 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
       </div>
     </header>
     ${blocks.join('\n')}
-    ${recsHtml}
+    ${imagesHtml}
     <footer>Confidential — prepared for ${esc(client)}. Generated by the Network Evaluation tool.</footer>
   </div>
 </body>

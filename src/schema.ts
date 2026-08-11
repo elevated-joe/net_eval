@@ -24,6 +24,8 @@ export interface SectionDef {
   fields: FieldDef[]
   /** Render the repeatable ISP editor in this section. */
   isp?: boolean
+  /** Render the image-upload editor in this section. */
+  images?: boolean
   /** Show a free-text notes box for this section. */
   notes?: boolean
 }
@@ -144,6 +146,13 @@ export const SECTIONS: SectionDef[] = [
       { key: 'fiscalYear', label: 'Fiscal Year', type: 'text', placeholder: 'e.g. Jan–Dec' },
     ],
   },
+  {
+    id: 'images',
+    title: 'Photos & Diagrams',
+    description: 'Upload network diagrams, rack photos, or screenshots to include in the report.',
+    images: true,
+    fields: [],
+  },
 ]
 
 export interface IspEntry {
@@ -151,11 +160,21 @@ export interface IspEntry {
   speed: string
 }
 
+export interface ReportImage {
+  id: string
+  name: string
+  caption: string
+  /** Downscaled image encoded as a data URL, so the report stays self-contained. */
+  dataUrl: string
+}
+
 export interface EvalData {
   /** Scalar fields keyed by FieldDef.key, plus per-section notes under `notes__<sectionId>`. */
   fields: Record<string, string>
   /** Repeatable ISP circuits. */
   isps: IspEntry[]
+  /** Images embedded into the client report. */
+  images: ReportImage[]
 }
 
 /** localStorage key for section notes: notes__<sectionId>. */
@@ -168,7 +187,7 @@ export function emptyData(): EvalData {
   const fields: Record<string, string> = {}
   for (const f of ALL_FIELDS) fields[f.key] = ''
   for (const s of SECTIONS) if (s.notes) fields[notesKey(s.id)] = ''
-  return { fields, isps: [{ provider: '', speed: '' }] }
+  return { fields, isps: [{ provider: '', speed: '' }], images: [] }
 }
 
 /** ISP entries that have at least a provider or a speed filled in. */
