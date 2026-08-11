@@ -94,7 +94,7 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   let imagesHtml = ''
   if (d.images.length) {
     imagesHtml =
-      '<section class="images"><h2>Photos &amp; Diagrams</h2>' +
+      '<section class="images"><h2>Photos &amp; Diagrams</h2><div class="photo-grid">' +
       d.images
         .map(
           (img) =>
@@ -103,7 +103,7 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
             '</figure>',
         )
         .join('') +
-      '</section>'
+      '</div></section>'
   }
 
   return `<!doctype html>
@@ -140,9 +140,10 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   table.data thead th { background: #eef3f8; font-weight: 700; }
   .note { font-size: 0.88rem; color: #4a5a6a; margin: 0.6rem 0 0; padding: 0.55rem 0.7rem; background: #f7f9fb; border-left: 3px solid #cbd5e1; }
   .pill { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.12rem 0.5rem; border-radius: 999px; }
-  .images figure { margin: 0 0 1.1rem; page-break-inside: avoid; }
-  .images img { max-width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; display: block; }
-  .images figcaption { font-size: 0.82rem; color: #4a5a6a; margin-top: 0.35rem; }
+  .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 0.75rem; }
+  .images figure { margin: 0 0 0.6rem; page-break-inside: avoid; }
+  .images img { width: 100%; height: auto; max-height: 4.5in; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 6px; display: block; background: #f7f9fb; }
+  .images figcaption { font-size: 0.82rem; color: #4a5a6a; margin-top: 0.3rem; }
   footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
   /* Remove the browser's default print header/footer (date, title, URL, page number). */
   @page { size: letter; margin: 0; }
