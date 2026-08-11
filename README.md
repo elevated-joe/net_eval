@@ -12,6 +12,9 @@ compiles the collected data into a client-presentable report. Built with
   network-assessment template.
 - **Client & engagement** header (client name, prepared-by, date) that brands the
   report.
+- **Company logo** on both report covers — ships with the Elevated MSP mark and
+  can be replaced with your own upload (PNG/JPG/SVG). The logo is stored in your
+  browser and reused for every client (kept out of the per-client JSON export).
 - **Compliance dropdown** (None, HIPAA, PCI-DSS, SOC 2, ISO 27001,
   NIST 800-171 / CMMC, GDPR, GLBA, FERPA, SOX, Other).
 - **Repeatable ISP list** — add/remove circuits with a **+ Add ISP** button.
@@ -88,6 +91,7 @@ net_eval/
 │   ├── main.tsx        # React entry point
 │   ├── App.tsx         # form + report UI
 │   ├── schema.ts          # field definitions (single source of truth)
+│   ├── brand.ts           # default company logo (Elevated MSP) as an SVG data URL
 │   ├── supportPlan.ts     # Peace of Mind gap analysis (currently unwired)
 │   ├── assessment.ts      # narrative assessment engine (findings + risk + notes)
 │   ├── assessmentReport.ts# assessment report HTML generator

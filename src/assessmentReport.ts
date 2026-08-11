@@ -54,6 +54,8 @@ function figures(images: ReportImage[]): string {
 
 export interface AssessmentReportOptions {
   date: string
+  /** Optional company logo (data URL) shown on the cover. */
+  logo?: string
 }
 
 export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions): string {
@@ -61,6 +63,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   const client = has(v(d, 'clientName')) ? v(d, 'clientName') : 'Client'
   const preparedBy = v(d, 'preparedBy')
   const date = has(v(d, 'evaluationDate')) ? v(d, 'evaluationDate') : opts.date
+  const logo = opts.logo?.trim() ? opts.logo : ''
   const { coverPage, techDetail } = d.reportOptions
 
   const exec = effectiveText(d, 'exec', a.execSummary)
@@ -116,6 +119,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   const coverHtml = coverPage
     ? `<section class="cover-page">
         <div class="cover-top">
+          ${logo ? `<img class="cover-logo" src="${logo}" alt="">` : ''}
           <div class="cover-bar"></div>
           <div class="cover-kicker">Network Assessment</div>
           <h1 class="cover-title">${esc(client)}</h1>
@@ -129,7 +133,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
           <div class="cover-confidential">Confidential — prepared for ${esc(client)}.</div>
         </div>
       </section>`
-    : `<header class="inline-head"><h1>${esc(client)}</h1><div class="meta"><span>${esc(date)}</span>${preparedBy ? `<span>Prepared by ${esc(preparedBy)}</span>` : ''}</div></header>`
+    : `<header class="inline-head">${logo ? `<img class="cover-logo" src="${logo}" alt="">` : ''}<h1>${esc(client)}</h1><div class="meta"><span>${esc(date)}</span>${preparedBy ? `<span>Prepared by ${esc(preparedBy)}</span>` : ''}</div></header>`
 
   return `<!doctype html>
 <html lang="en">
@@ -142,6 +146,8 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   body { font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a2432; margin: 0; background: #f4f6f8; line-height: 1.55; }
   .page { max-width: 8.5in; margin: 0 auto; background: #fff; padding: 0.85in 0.85in 1in; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   .cover-page { min-height: 8.5in; display: flex; flex-direction: column; justify-content: space-between; padding: 0.9in 0 0.8in; }
+  .cover-logo { max-height: 84px; max-width: 320px; width: auto; height: auto; display: block; margin-bottom: 2.2rem; }
+  .inline-head .cover-logo { max-height: 60px; margin-bottom: 1rem; }
   .cover-bar { height: 6px; width: 3.5in; background: #1f6feb; border-radius: 3px; margin-bottom: 2rem; }
   .cover-kicker { color: #1f6feb; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.85rem; }
   .cover-title { font-size: 3rem; margin: 0.6rem 0 0; line-height: 1.05; font-weight: 700; }

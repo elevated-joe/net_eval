@@ -12,12 +12,17 @@ import { buildReportHtml } from './report'
 import { buildAssessment, RATINGS, ASSESSMENT_SECTIONS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
 import { runAiAnalysis, AI_MODELS } from './aiAnalysis'
+import { DEFAULT_LOGO } from './brand'
 
 const AI_KEY_STORAGE = 'net_eval.ai.key'
 const AI_MODEL_STORAGE = 'net_eval.ai.model'
+// Company logo lives in its own storage slot (not in EvalData) so it persists
+// across clients and Reset, and is excluded from per-client JSON export.
+const LOGO_STORAGE = 'net_eval.brand.logo'
 
 const STORAGE_KEY = 'net_eval.data.v2'
 const MAX_IMAGE_DIM = 1600
+const MAX_LOGO_DIM = 600
 
 type View = 'form' | 'report' | 'assessment'
 
@@ -103,11 +108,51 @@ function processImageFile(file: File): Promise<ReportImage> {
   })
 }
 
+/** Read a logo image, downscale it, and return a data URL (PNG kept for transparency). */
+function processLogoFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('read failed'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('decode failed'))
+      img.onload = () => {
+        let { width, height } = img
+        if (width > MAX_LOGO_DIM || height > MAX_LOGO_DIM) {
+          const scale = MAX_LOGO_DIM / Math.max(width, height)
+          width = Math.round(width * scale)
+          height = Math.round(height * scale)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('no canvas context'))
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        // Keep PNG for logos (preserves transparency); JPEG only for photos.
+        resolve(file.type === 'image/jpeg' ? canvas.toDataURL('image/jpeg', 0.9) : canvas.toDataURL('image/png'))
+      }
+      img.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function App() {
   const [data, setData] = useState<EvalData>(loadData)
   const [view, setView] = useState<View>('form')
   const fileInput = useRef<HTMLInputElement>(null)
   const imageInput = useRef<HTMLInputElement>(null)
+  const logoInput = useRef<HTMLInputElement>(null)
+
+  // Company logo (data URL). Absent storage → ship the default; empty string → no logo.
+  const [logo, setLogo] = useState<string>(() => {
+    const v = localStorage.getItem(LOGO_STORAGE)
+    return v === null ? DEFAULT_LOGO : v
+  })
 
   // Optional AI analysis. The API key lives in its own storage slot — never in
   // EvalData — so it is excluded from JSON export.
@@ -125,6 +170,22 @@ export default function App() {
       /* storage may be unavailable or full (e.g. many large images) */
     }
   }, [data])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOGO_STORAGE, logo)
+    } catch {
+      /* storage may be unavailable or full */
+    }
+  }, [logo])
+
+  const uploadLogo = useCallback(async (file: File) => {
+    try {
+      setLogo(await processLogoFile(file))
+    } catch {
+      alert('Could not read that image. Please try a PNG, JPG, or SVG file.')
+    }
+  }, [])
 
   const updateField = useCallback((key: string, value: string) => {
     setData((prev) => ({ ...prev, fields: { ...prev.fields, [key]: value } }))
@@ -227,15 +288,9 @@ export default function App() {
     setData((prev) => ({ ...prev, reportOptions: { ...prev.reportOptions, ...patch } }))
   }, [])
 
-  const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso() }), [data])
+  const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso(), logo }), [data, logo])
   const assessment = useMemo(() => buildAssessment(data), [data])
-  const assessmentHtml = useMemo(() => buildAssessmentHtml(data, { date: todayIso() }), [data])
-
-  const filledCount = useMemo(() => {
-    const fieldCount = Object.values(data.fields).filter((v) => v.trim().length > 0).length
-    const ispCount = data.isps.filter((i) => i.provider.trim() || i.speed.trim()).length
-    return fieldCount + ispCount
-  }, [data])
+  const assessmentHtml = useMemo(() => buildAssessmentHtml(data, { date: todayIso(), logo }), [data, logo])
 
   const download = (filename: string, content: string, mime: string) => {
     const blob = new Blob([content], { type: mime })
@@ -299,10 +354,6 @@ export default function App() {
           <h1>Network Evaluation</h1>
           <p className="subtitle">Complete the intake form, then generate a client-ready report.</p>
         </div>
-        <div className="progress" aria-label="Fields completed">
-          <span className="progress-count">{filledCount}</span>
-          <span className="progress-label">fields filled</span>
-        </div>
       </header>
 
       <nav className="tabs">
@@ -328,6 +379,35 @@ export default function App() {
 
       {view === 'form' && (
         <main className="form">
+          <section className="card">
+            <h2>Company Logo</h2>
+            <p className="section-desc">
+              Appears on the cover of both reports. Upload your logo (PNG, JPG, or SVG) — it’s saved in this browser and
+              reused for every client.
+            </p>
+            <div className="logo-manager">
+              <div className="logo-preview">
+                {logo ? <img src={logo} alt="Company logo" /> : <span className="logo-empty">No logo</span>}
+              </div>
+              <div className="logo-actions">
+                <button className="btn" onClick={() => logoInput.current?.click()}>Upload logo</button>
+                {logo !== DEFAULT_LOGO && (
+                  <button className="btn subtle" onClick={() => setLogo(DEFAULT_LOGO)}>Use Elevated default</button>
+                )}
+                {logo && <button className="btn subtle" onClick={() => setLogo('')}>Remove</button>}
+                <input
+                  ref={logoInput}
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,.png,.jpg,.jpeg,.svg"
+                  hidden
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) void uploadLogo(e.target.files[0])
+                    e.target.value = ''
+                  }}
+                />
+              </div>
+            </div>
+          </section>
           {SECTIONS.map((section) => (
             <section key={section.id} className="card">
               <h2>{section.title}</h2>
