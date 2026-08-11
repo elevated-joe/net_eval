@@ -301,7 +301,7 @@ export default function App() {
 
       <nav className="tabs">
         <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
-        <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Client Report</button>
+        <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Internal Report</button>
         <button className={`tab ${view === 'assessment' ? 'active' : ''}`} onClick={() => setView('assessment')}>Assessment Report</button>
         <div className="tabs-spacer" />
         <button className="btn" onClick={exportJson}>Export data</button>
@@ -499,7 +499,7 @@ export default function App() {
         <main className="report-view">
           <section className="card">
             <div className="summary-actions">
-              <h2>Client Report</h2>
+              <h2>Internal Report</h2>
               <div className="summary-buttons">
                 <button
                   className="btn primary"
@@ -512,10 +512,10 @@ export default function App() {
               </div>
             </div>
             <p className="section-desc">
-              Client-presentable report with your evaluation data and any uploaded photos/diagrams. Use “Download PDF” for
-              a PDF deliverable, or download the standalone HTML.
+              Internal report with your evaluation data and any uploaded photos/diagrams. Download it as a PDF or as
+              standalone HTML.
             </p>
-            <iframe className="report-preview" title="Client report preview" srcDoc={reportHtml} />
+            <iframe className="report-preview" title="Internal report preview" srcDoc={reportHtml} />
           </section>
         </main>
       )}

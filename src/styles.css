@@ -347,7 +347,7 @@ select:focus {
   margin-top: 1rem;
 }
 
-/* Client report preview */
+/* Internal report preview */
 .report-view .card {
   padding-bottom: 0;
 }

@@ -24,11 +24,11 @@ compiles the collected data into a client-presentable report. Built with
 - **Per-section notes** captured on every section and carried into the report.
 - **Photos & diagrams** — upload network diagrams, rack photos, or screenshots
   (auto-downscaled and embedded as data URLs) with optional captions. They
-  always appear in the Client Report; each image can also be **included in the
+  always appear in the Internal Report; each image can also be **included in the
   Assessment Report** and **aligned to a specific section** (or a general
   appendix).
-- **Client Report** — a professional, client-presentable document with a cover
-  header, per-section data tables, and the uploaded photos/diagrams.
+- **Internal Report** — a working document with a cover header, per-section
+  data tables, and the uploaded photos/diagrams.
 - **Assessment Report** — an auto-drafted narrative assessment generated from
   the form data: an executive summary, an overall risk rating, and one result
   card **per form section**, each with a dynamic rating (Good / Attention /
