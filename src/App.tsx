@@ -456,18 +456,28 @@ export default function App() {
               onChange={setAssessmentOverride}
               onReset={clearAssessmentOverride}
             />
-            {assessment.domains.map((dom) => (
-              <AssessmentEditor
-                key={dom.id}
-                blockId={`finding__${dom.id}`}
-                label={dom.title}
-                badge={dom.risk}
-                auto={dom.finding}
-                actions={dom.actions}
-                value={data.assessmentText[`finding__${dom.id}`]}
-                onChange={setAssessmentOverride}
-                onReset={clearAssessmentOverride}
-              />
+            {assessment.sections.map((s) => (
+              <div key={s.id} className="assess-section">
+                <AssessmentEditor
+                  blockId={`client__${s.id}`}
+                  label={s.title}
+                  badge={s.rating}
+                  auto={s.clientRecommendation}
+                  value={data.assessmentText[`client__${s.id}`]}
+                  onChange={setAssessmentOverride}
+                  onReset={clearAssessmentOverride}
+                />
+                <AssessmentEditor
+                  blockId={`finding__${s.id}`}
+                  label="Technical detail"
+                  auto={s.finding}
+                  actions={s.actions}
+                  value={data.assessmentText[`finding__${s.id}`]}
+                  onChange={setAssessmentOverride}
+                  onReset={clearAssessmentOverride}
+                  compact
+                />
+              </div>
             ))}
             <AssessmentEditor
               blockId="nextSteps"
@@ -498,15 +508,25 @@ interface AssessmentEditorProps {
   value: string | undefined
   badge?: string
   actions?: string[]
+  compact?: boolean
   onChange: (blockId: string, value: string) => void
   onReset: (blockId: string) => void
 }
 
-function AssessmentEditor({ blockId, label, auto, value, badge, actions, onChange, onReset }: AssessmentEditorProps) {
+/** Map an assessment rating to a pill CSS class. */
+const RATING_CLASS: Record<string, string> = {
+  'At Risk': 'high',
+  Attention: 'medium',
+  Good: 'low',
+  Informational: 'info',
+  'Not Assessed': 'info',
+}
+
+function AssessmentEditor({ blockId, label, auto, value, badge, actions, compact, onChange, onReset }: AssessmentEditorProps) {
   const edited = value !== undefined
-  const badgeClass = badge ? badge.toLowerCase() : ''
+  const badgeClass = badge ? RATING_CLASS[badge] ?? 'info' : ''
   return (
-    <div className="assess-block">
+    <div className={`assess-block ${compact ? 'compact' : ''}`}>
       <div className="assess-head">
         <h3>
           {label}
@@ -520,7 +540,7 @@ function AssessmentEditor({ blockId, label, auto, value, badge, actions, onChang
       </div>
       <textarea
         className="assess-text"
-        rows={4}
+        rows={compact ? 3 : 4}
         value={edited ? value : auto}
         onChange={(e) => onChange(blockId, e.target.value)}
       />

@@ -1,12 +1,13 @@
 // Assessment report generator.
 //
-// Renders the narrative network assessment (executive summary, per-domain
-// findings + recommended actions, risk-priorities table, next steps) as a
-// standalone, print-ready HTML document. Honors any manual edits stored in
-// EvalData.assessmentText. Self-contained so it downloads / prints cleanly.
+// Renders the per-section narrative network assessment (executive summary,
+// overall risk, one result card per section with a rating, a client-facing
+// recommendation, a technical finding and actions, a risk-priorities table,
+// and next steps) as a standalone, print-ready HTML document. Honors manual
+// edits stored in EvalData.assessmentText.
 
 import { type EvalData } from './schema'
-import { buildAssessment, effectiveText, type RiskLevel } from './assessment'
+import { buildAssessment, effectiveText, type Rating } from './assessment'
 
 function esc(s: string): string {
   return s
@@ -16,7 +17,6 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;')
 }
 
-/** Escape then convert blank-line-separated text into paragraphs. */
 function paras(s: string): string {
   return s
     .split(/\n{2,}/)
@@ -27,7 +27,13 @@ function paras(s: string): string {
 const has = (v: string | undefined): boolean => !!v && v.trim().length > 0
 const v = (d: EvalData, k: string): string => (d.fields[k] ?? '').trim()
 
-const pillClass: Record<RiskLevel, string> = { High: 'high', Medium: 'medium', Low: 'low', Info: 'info' }
+const pillClass: Record<Rating, string> = {
+  'At Risk': 'high',
+  Attention: 'medium',
+  Good: 'good',
+  Informational: 'info',
+  'Not Assessed': 'info',
+}
 
 export interface AssessmentReportOptions {
   date: string
@@ -44,19 +50,20 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   const nextSteps = effectiveText(d, 'nextSteps', a.nextSteps)
 
   const indicatorsHtml = a.keyIndicators.length
-    ? `<p class="lead">Key risk indicators:</p><ul>${a.keyIndicators.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
+    ? `<p class="lead">Key areas of focus:</p><ul>${a.keyIndicators.map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`
     : ''
 
-  const domainsHtml = a.domains
-    .map((dom) => {
-      const finding = effectiveText(d, `finding__${dom.id}`, dom.finding)
-      const actions = dom.actions.length
-        ? `<p class="lead">Recommended actions:</p><ul>${dom.actions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+  const sectionsHtml = a.sections
+    .map((s) => {
+      const finding = effectiveText(d, `finding__${s.id}`, s.finding)
+      const client = effectiveText(d, `client__${s.id}`, s.clientRecommendation)
+      const actions = s.actions.length
+        ? `<p class="lead">Recommended actions:</p><ul>${s.actions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
         : ''
       return (
-        `<section class="domain"><h2>${esc(dom.title)} <span class="pill ${pillClass[dom.risk]}">${dom.risk}</span></h2>` +
-        paras(finding) +
-        actions +
+        `<section class="domain"><h2>${esc(s.title)} <span class="pill ${pillClass[s.rating]}">${esc(s.rating)}</span></h2>` +
+        `<div class="reco"><span class="reco-label">Recommendation</span>${paras(client)}</div>` +
+        `<div class="detail"><span class="detail-label">Technical detail</span>${paras(finding)}${actions}</div>` +
         '</section>'
       )
     })
@@ -67,7 +74,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
       a.priorities
         .map(
           (p) =>
-            `<tr><td><span class="pill ${pillClass[p.priority]}">${p.priority}</span></td><td>${esc(p.area)}</td><td>${esc(p.reason)}</td></tr>`,
+            `<tr><td><span class="pill ${p.priority === 'High' ? 'high' : 'medium'}">${p.priority}</span></td><td>${esc(p.area)}</td><td>${esc(p.reason)}</td></tr>`,
         )
         .join('') +
       '</tbody></table></section>'
@@ -94,13 +101,18 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
   ul { margin: 0 0 0.8rem; padding-left: 1.2rem; }
   li { margin: 0.15rem 0; }
   .rating { background: #eef3f8; border-left: 4px solid #1f6feb; padding: 0.6rem 0.85rem; margin: 0.25rem 0 0.75rem; font-size: 0.95rem; }
+  .reco { background: #f0f7ff; border-left: 4px solid #1f6feb; border-radius: 4px; padding: 0.6rem 0.85rem; margin: 0.35rem 0 0.6rem; }
+  .reco-label, .detail-label { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #1f6feb; margin-bottom: 0.25rem; }
+  .detail { margin-left: 0.1rem; }
+  .detail-label { color: #8895a3; }
+  .detail p, .detail li { color: #4a5a6a; font-size: 0.9rem; }
   table.data { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   table.data th, table.data td { text-align: left; padding: 0.5rem 0.65rem; border: 1px solid #e2e8f0; vertical-align: top; }
   table.data thead th { background: #eef3f8; font-weight: 700; }
   .pill { display: inline-block; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.12rem 0.5rem; border-radius: 999px; }
   .pill.high { background: #fde2e1; color: #b42318; }
   .pill.medium { background: #fef0d3; color: #b25e09; }
-  .pill.low { background: #d6f2e0; color: #0a6b3b; }
+  .pill.good { background: #d6f2e0; color: #0a6b3b; }
   .pill.info { background: #e2e8f0; color: #475569; }
   footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
   @media print {
@@ -124,7 +136,7 @@ export function buildAssessmentHtml(d: EvalData, opts: AssessmentReportOptions):
 
     <section><h2>Executive Summary</h2>${paras(exec)}</section>
     <section><h2>Overall Risk Assessment</h2><div class="rating"><strong>Overall risk:</strong> ${esc(a.overallRating)}</div>${paras(overall)}${indicatorsHtml}</section>
-    ${domainsHtml}
+    ${sectionsHtml}
     ${prioritiesHtml}
     <section><h2>Recommended Next Steps</h2>${paras(nextSteps)}</section>
 

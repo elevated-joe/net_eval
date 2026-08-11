@@ -17,18 +17,23 @@ compiles the collected data into a client-presentable report. Built with
 - **Repeatable ISP list** — add/remove circuits with a **+ Add ISP** button.
 - **Identity & Microsoft 365** — directory model (Domain / Entra ID / Hybrid /
   Workgroup), M365 services checklist (Exchange, SharePoint, Teams, Intune, MDM,
-  OneDrive), licensing, and MFA coverage — plus firewall platform type, backup
-  restore/offsite verification, and remote-access fields.
+  OneDrive), licensing, and MFA coverage.
+- **Status cues** for reliable scoring — automatic failover, firewall platform
+  type, overall hardware condition, backup restore/offsite verification, patch
+  management, and remote-access MFA.
 - **Per-section notes** captured on every section and carried into the report.
 - **Photos & diagrams** — upload network diagrams, rack photos, or screenshots
   (auto-downscaled and embedded as data URLs) with optional captions; they
   appear in the client report.
 - **Client Report** — a professional, client-presentable document with a cover
   header, per-section data tables, and the uploaded photos/diagrams.
-- **Assessment Report** — an auto-drafted narrative assessment (executive
-  summary, overall risk rating, per-domain findings with recommended actions, a
-  risk-priorities table, and next steps) generated from the form data. Every
-  finding is **editable** before export.
+- **Assessment Report** — an auto-drafted narrative assessment generated from
+  the form data: an executive summary, an overall risk rating, and one result
+  card **per form section**, each with a dynamic rating (Good / Attention /
+  At Risk / Informational / Not Assessed), a plain-language **client-facing
+  recommendation**, a technical finding, and technical action items — plus a
+  risk-priorities table and next steps. Every recommendation and finding is
+  **editable** (with reset-to-auto-draft) before export.
 - Both reports: preview in-app, **download as standalone HTML**, or
   **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).

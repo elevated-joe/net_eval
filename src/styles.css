@@ -417,11 +417,36 @@ select:focus {
 }
 
 /* Assessment editor */
+.assess-section {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.assess-section .assess-block {
+  border: none;
+  padding: 0;
+  margin-bottom: 0.6rem;
+}
+
+.assess-section .assess-block.compact {
+  margin-bottom: 0;
+}
+
 .assess-block {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.9rem 1rem;
   margin-bottom: 1rem;
+}
+
+.assess-block.compact .assess-head h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
 }
 
 .assess-head {
