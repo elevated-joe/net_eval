@@ -116,6 +116,7 @@ export default function App() {
   const [aiStatus, setAiStatus] = useState<{ state: 'idle' | 'running' | 'done' | 'error'; message?: string }>({
     state: 'idle',
   })
+  const [pdfBusy, setPdfBusy] = useState(false)
 
   useEffect(() => {
     try {
@@ -253,34 +254,20 @@ export default function App() {
   const exportReport = () => download(`${clientSlug}-network-evaluation-report.html`, reportHtml, 'text/html')
   const exportAssessment = () => download(`${clientSlug}-network-assessment.html`, assessmentHtml, 'text/html')
 
-  const printHtml = (html: string) => {
-    // Print via a hidden in-page iframe rather than window.open — mobile
-    // browsers block the pop-up window, but an iframe print needs no pop-up and
-    // still opens the native print sheet (which includes Save to PDF / Files).
-    const iframe = document.createElement('iframe')
-    iframe.setAttribute('aria-hidden', 'true')
-    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;'
-    iframe.onload = () => {
-      const cw = iframe.contentWindow
-      if (!cw) {
-        iframe.remove()
-        return
-      }
-      const cleanup = () => {
-        if (document.body.contains(iframe)) iframe.remove()
-      }
-      cw.onafterprint = () => setTimeout(cleanup, 300)
-      try {
-        cw.focus()
-        cw.print()
-      } catch {
-        cleanup()
-      }
-      // Fallback: some mobile browsers never fire afterprint.
-      setTimeout(cleanup, 60000)
+  const exportPdf = async (html: string, filename: string) => {
+    // Generate the PDF entirely in the browser and download it directly — no
+    // print dialog and no new tab, so it works the same on desktop and mobile.
+    if (pdfBusy) return
+    setPdfBusy(true)
+    try {
+      // Load the PDF engine (jspdf + html2canvas) on demand to keep initial load light.
+      const { exportHtmlAsPdf } = await import('./pdf')
+      await exportHtmlAsPdf(html, filename)
+    } catch (err) {
+      alert(`Could not generate the PDF: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      setPdfBusy(false)
     }
-    iframe.srcdoc = html
-    document.body.appendChild(iframe)
   }
 
   const importJson = (file: File) => {
@@ -514,12 +501,18 @@ export default function App() {
             <div className="summary-actions">
               <h2>Client Report</h2>
               <div className="summary-buttons">
-                <button className="btn primary" onClick={() => printHtml(reportHtml)}>Print / Save as PDF</button>
+                <button
+                  className="btn primary"
+                  disabled={pdfBusy}
+                  onClick={() => exportPdf(reportHtml, `${clientSlug}-network-evaluation-report.pdf`)}
+                >
+                  {pdfBusy ? 'Generating PDF…' : 'Download PDF'}
+                </button>
                 <button className="btn" onClick={exportReport}>Download .html</button>
               </div>
             </div>
             <p className="section-desc">
-              Client-presentable report with your evaluation data and any uploaded photos/diagrams. Use “Print / Save as PDF” for
+              Client-presentable report with your evaluation data and any uploaded photos/diagrams. Use “Download PDF” for
               a PDF deliverable, or download the standalone HTML.
             </p>
             <iframe className="report-preview" title="Client report preview" srcDoc={reportHtml} />
@@ -533,7 +526,13 @@ export default function App() {
             <div className="summary-actions">
               <h2>Assessment Report</h2>
               <div className="summary-buttons">
-                <button className="btn primary" onClick={() => printHtml(assessmentHtml)}>Print / Save as PDF</button>
+                <button
+                  className="btn primary"
+                  disabled={pdfBusy}
+                  onClick={() => exportPdf(assessmentHtml, `${clientSlug}-network-assessment.pdf`)}
+                >
+                  {pdfBusy ? 'Generating PDF…' : 'Download PDF'}
+                </button>
                 <button className="btn" onClick={exportAssessment}>Download .html</button>
               </div>
             </div>
