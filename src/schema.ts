@@ -226,6 +226,17 @@ export interface ReportImage {
   caption: string
   /** Downscaled image encoded as a data URL, so the report stays self-contained. */
   dataUrl: string
+  /** Include this image in the Assessment Report (Client Report always shows all). */
+  inAssessment: boolean
+  /** Assessment section id to place the image under, or '' for a general appendix. */
+  section: string
+}
+
+export interface ReportOptions {
+  /** Render a dedicated cover page in the Assessment Report. */
+  coverPage: boolean
+  /** Include the technical-detail findings (and actions) in the Assessment Report. */
+  techDetail: boolean
 }
 
 export interface EvalData {
@@ -239,6 +250,8 @@ export interface EvalData {
   assessmentText: Record<string, string>
   /** Assessment section ids excluded from the generated report. */
   hiddenSections: string[]
+  /** Assessment report output options. */
+  reportOptions: ReportOptions
 }
 
 /** localStorage key for section notes: notes__<sectionId>. */
@@ -251,7 +264,14 @@ export function emptyData(): EvalData {
   const fields: Record<string, string> = {}
   for (const f of ALL_FIELDS) fields[f.key] = ''
   for (const s of SECTIONS) if (s.notes) fields[notesKey(s.id)] = ''
-  return { fields, isps: [{ provider: '', speed: '' }], images: [], assessmentText: {}, hiddenSections: [] }
+  return {
+    fields,
+    isps: [{ provider: '', speed: '' }],
+    images: [],
+    assessmentText: {},
+    hiddenSections: [],
+    reportOptions: { coverPage: true, techDetail: true },
+  }
 }
 
 /** ISP entries that have at least a provider or a speed filled in. */

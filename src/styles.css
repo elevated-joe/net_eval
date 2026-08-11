@@ -257,6 +257,63 @@ select:focus {
   padding: 0.4rem 0.55rem;
 }
 
+.image-include {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.image-include input {
+  width: auto;
+  margin: 0;
+}
+
+.image-section {
+  font-size: 0.8rem;
+  padding: 0.35rem 0.5rem;
+}
+
+/* Report options */
+.report-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 0.88rem;
+}
+
+.report-options-label {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.report-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.report-options input {
+  width: auto;
+  margin: 0;
+}
+
+.ai-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
 /* ISP repeatable rows */
 .isp-list {
   display: flex;
