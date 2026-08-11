@@ -52,8 +52,9 @@ compiles the collected data into a client-presentable report. Built with
   - **Report options**: an optional **cover page**, and a toggle to **exclude
     the technical detail** (client recommendations only) from the Assessment
     Report export.
-- Both reports: preview in-app, **download as standalone HTML**, or
-  **Print → Save as PDF**.
+- Both reports: preview in-app, **download as a PDF** (generated in the
+  browser and saved directly — no print dialog and no new tab, so it works the
+  same on desktop and mobile), or **download as standalone HTML**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
 - No backend, no network calls — works offline once loaded.
 
@@ -92,6 +93,7 @@ net_eval/
 │   ├── assessmentReport.ts# assessment report HTML generator
 │   ├── aiAnalysis.ts      # optional AI (Anthropic API) analysis
 │   ├── report.ts          # client-presentable data-report generator
+│   ├── pdf.ts             # client-side HTML→PDF export (jspdf + html2canvas)
 │   └── styles.css
 ├── vite.config.ts
 └── .github/workflows/deploy.yml
