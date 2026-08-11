@@ -59,6 +59,117 @@ export interface Assessment {
 const has = (v: string | undefined): boolean => !!v && v.trim().length > 0
 const val = (d: EvalData, k: string): string => (d.fields[k] ?? '').trim()
 
+// Values that mean "not in place" even though the text field is non-empty —
+// e.g. a user typing "None" or "N/A" for a solution.
+const NEGATIVE = new Set(['none', 'n/a', 'na', 'no', 'nil', 'tbd', 'unknown', 'not in place', 'not present', 'n\\a'])
+/** True when a control value is present AND not a negative sentinel. */
+const present = (v: string | undefined): boolean => {
+  const t = (v ?? '').trim().toLowerCase()
+  return t.length > 0 && !NEGATIVE.has(t)
+}
+
+// ---------------------------------------------------------------------------
+// Context analysis: read the free-text notes for signals of past incidents and
+// escalate the related sections. This is deterministic keyword matching, not
+// full language understanding, but it lets notes influence the output.
+// ---------------------------------------------------------------------------
+
+interface IncidentPattern {
+  key: string
+  re: RegExp
+  sections: string[]
+  tech: string
+  client: string
+  indicator: string
+}
+
+const INCIDENT_PATTERNS: IncidentPattern[] = [
+  {
+    key: 'phishing',
+    re: /\b(phish|spoof|spear[- ]?phish|business email compromise|\bbec\b|wire fraud|impersonat)/i,
+    sections: ['security', 'identity'],
+    tech: 'Notes reference recent phishing/spoofing activity, which sharply raises the importance of end-user training, MFA, and email filtering in this area.',
+    client:
+      'Your notes mention a recent phishing/spoofing attempt. Because attackers are already targeting your team, strengthening staff training, MFA, and email protection should be treated as an immediate priority.',
+    indicator: 'Recent phishing/spoofing activity noted with related controls incomplete.',
+  },
+  {
+    key: 'ransomware',
+    re: /\bransom(ware)?\b/i,
+    sections: ['security', 'platform'],
+    tech: 'Notes reference a ransomware concern, which elevates the importance of endpoint protection and verified, offline/immutable backups.',
+    client:
+      'Your notes mention ransomware. The most effective protections are endpoint security, staff training, and backups that are tested and stored offline — these should be prioritized.',
+    indicator: 'Ransomware concern noted; verify endpoint protection and backups.',
+  },
+  {
+    key: 'breach',
+    re: /\b(breach|compromis|hacked|account takeover|stolen (password|credential))/i,
+    sections: ['identity', 'security'],
+    tech: 'Notes reference a security breach or account compromise, which elevates the priority of MFA coverage and access controls.',
+    client:
+      'Your notes mention a breach or account compromise. Enforcing multi-factor authentication everywhere and reviewing access is the fastest way to reduce repeat risk.',
+    indicator: 'Breach / account compromise noted; MFA and access controls are a priority.',
+  },
+  {
+    key: 'dataloss',
+    re: /\b(data loss|lost data|accidental deletion|corrupt(ed)? data)\b/i,
+    sections: ['platform'],
+    tech: 'Notes reference a data-loss event, which elevates the importance of verified restores and offsite/immutable backups.',
+    client:
+      'Your notes mention data loss. Confirming that backups are tested and stored offsite is the key protection against a repeat.',
+    indicator: 'Data-loss event noted; verify tested, offsite backups.',
+  },
+  {
+    key: 'outage',
+    re: /\b(outage|went down|downtime|internet down|isp down)\b/i,
+    sections: ['connectivity'],
+    tech: 'Notes reference a connectivity outage, which elevates the value of redundant internet with automatic failover.',
+    client:
+      'Your notes mention an internet outage. A second connection with automatic failover would prevent a repeat from stopping your operations.',
+    indicator: 'Connectivity outage noted; redundancy/failover recommended.',
+  },
+]
+
+/** Concatenate all section-notes text for keyword analysis. */
+function notesBlob(d: EvalData): string {
+  return Object.entries(d.fields)
+    .filter(([k]) => k.startsWith('notes__'))
+    .map(([, v]) => v ?? '')
+    .join('\n')
+}
+
+/** Escalate a rating one step toward At Risk. */
+function bumpRating(r: Rating): Rating {
+  if (r === 'At Risk') return 'At Risk'
+  if (r === 'Attention') return 'At Risk'
+  return 'Attention'
+}
+
+/**
+ * Apply incident context detected in notes: escalate affected sections and
+ * append tailored context to their finding and client recommendation.
+ * Returns the list of matched incident indicators.
+ */
+function applyIncidentContext(sections: AssessmentSection[], blob: string): string[] {
+  if (!blob.trim()) return []
+  const indicators: string[] = []
+  for (const pat of INCIDENT_PATTERNS) {
+    if (!pat.re.test(blob)) continue
+    indicators.push(pat.indicator)
+    for (const secId of pat.sections) {
+      const s = sections.find((x) => x.id === secId)
+      if (!s) continue
+      s.rating = bumpRating(s.rating)
+      s.finding = `${s.finding} ${pat.tech}`.trim()
+      s.clientRecommendation = `${s.clientRecommendation} ${pat.client}`.trim()
+      s.indicator = pat.indicator
+      s.reason = s.reason ?? pat.indicator
+    }
+  }
+  return indicators
+}
+
 /** Join a list into an English phrase: [a,b,c] -> "a, b, and c". */
 function englishList(items: string[]): string {
   const p = items.filter(Boolean)
@@ -244,12 +355,12 @@ function hardwareSection(d: EvalData): AssessmentSection {
     }
   }
 
-  const fwMissing = !has(fw)
+  const fwMissing = !present(fw)
   const fwWeak = fwType === 'Open-source' || fwType === 'Unknown' || !has(fwType)
   const condEol = cond === 'End-of-life'
   const condAging = cond === 'Aging' || cond === 'Mixed'
-  const noPdu = !has(pdu)
-  const noUps = !has(ups)
+  const noPdu = !present(pdu)
+  const noUps = !present(ups)
 
   const issues: string[] = []
   if (fwMissing) issues.push('no firewall was recorded, so perimeter protection needs to be confirmed')
@@ -306,7 +417,7 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
     }
   }
 
-  if (has(backup) && tested === 'Yes' && offsite === 'Yes') {
+  if (present(backup) && tested === 'Yes' && offsite === 'Yes') {
     return {
       ...base,
       rating: 'Good',
@@ -317,11 +428,11 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
     }
   }
 
-  if (!has(backup) || tested === 'No') {
+  if (!present(backup) || tested === 'No') {
     return {
       ...base,
       rating: 'At Risk',
-      finding: !has(backup)
+      finding: !present(backup)
         ? 'The current state of backups is unknown, and working backups could not be confirmed. There is no documented evidence of restore testing, offsite copy validation, or immutable protection.'
         : `A backup solution (${backup}) is in place, but restore testing has not been performed. Untested backups frequently fail at the moment they are needed.`,
       clientRecommendation:
@@ -371,12 +482,12 @@ function securitySection(d: EvalData): AssessmentSection {
     }
   }
 
-  const remoteUnprotected = has(ra) && ramfa !== 'Yes'
+  const remoteUnprotected = present(ra) && ramfa !== 'Yes'
   const missing: string[] = []
-  if (!has(av)) missing.push('endpoint protection (antivirus/EDR) is not recorded')
-  if (!has(spam)) missing.push('email spam/phishing filtering is not recorded')
-  if (!has(training)) missing.push('security awareness training is not recorded')
-  if (!has(contentFilter)) missing.push('web/DNS content filtering is not recorded')
+  if (!present(av)) missing.push('endpoint protection (antivirus/EDR) is not in place')
+  if (!present(spam)) missing.push('email spam/phishing filtering is not in place')
+  if (!present(training)) missing.push('security awareness training is not in place')
+  if (!present(contentFilter)) missing.push('web/DNS content filtering is not in place')
   if (patch !== 'Actively managed') missing.push('patch management is not confirmed as actively managed')
   if (remoteUnprotected) missing.push('remote access is not confirmed to require MFA')
 
@@ -392,7 +503,7 @@ function securitySection(d: EvalData): AssessmentSection {
     }
   }
 
-  const critical = !has(av) || remoteUnprotected
+  const critical = !present(av) || remoteUnprotected || !present(training)
   return {
     ...base,
     rating: critical ? 'At Risk' : 'Attention',
@@ -481,6 +592,10 @@ export function buildAssessment(d: EvalData): Assessment {
     organizationSection(d),
   ]
 
+  // Analyze notes for past incidents and escalate the related sections; this
+  // becomes part of the auto baseline (manual overrides still take precedence).
+  applyIncidentContext(sections, notesBlob(d))
+
   // Record the auto rating, apply any manual rating override, and mark hidden.
   for (const s of sections) {
     s.autoRating = s.rating
@@ -521,7 +636,7 @@ export function buildAssessment(d: EvalData): Assessment {
       ? `, driven by ${flagged.length} area${flagged.length === 1 ? '' : 's'} requiring attention across resilience, security, and infrastructure management that together increase the likelihood and impact of a cyber incident or prolonged outage.`
       : '. No high-severity gaps were identified, though routine validation and monitoring should continue.')
 
-  const keyIndicators = flagged.map((s) => s.indicator ?? `${s.title} requires attention.`)
+  const keyIndicators = [...new Set(flagged.map((s) => s.indicator ?? `${s.title} requires attention.`))]
 
   const priorities: PriorityRow[] = [
     ...atRisk.map((s) => ({ priority: 'High' as const, area: s.title, reason: s.reason ?? `${s.title} requires remediation.` })),

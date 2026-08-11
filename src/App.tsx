@@ -11,6 +11,10 @@ import {
 import { buildReportHtml } from './report'
 import { buildAssessment, RATINGS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
+import { runAiAnalysis, AI_MODELS } from './aiAnalysis'
+
+const AI_KEY_STORAGE = 'net_eval.ai.key'
+const AI_MODEL_STORAGE = 'net_eval.ai.model'
 
 const STORAGE_KEY = 'net_eval.data.v2'
 const MAX_IMAGE_DIM = 1600
@@ -89,6 +93,14 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const imageInput = useRef<HTMLInputElement>(null)
 
+  // Optional AI analysis. The API key lives in its own storage slot — never in
+  // EvalData — so it is excluded from JSON export.
+  const [aiKey, setAiKey] = useState<string>(() => localStorage.getItem(AI_KEY_STORAGE) ?? '')
+  const [aiModel, setAiModel] = useState<string>(() => localStorage.getItem(AI_MODEL_STORAGE) ?? AI_MODELS[0].id)
+  const [aiStatus, setAiStatus] = useState<{ state: 'idle' | 'running' | 'done' | 'error'; message?: string }>({
+    state: 'idle',
+  })
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
@@ -119,6 +131,31 @@ export default function App() {
       delete next[blockId]
       return { ...prev, assessmentText: next }
     })
+  }, [])
+
+  const runAi = useCallback(async () => {
+    const key = aiKey.trim()
+    if (!key) {
+      setAiStatus({ state: 'error', message: 'Enter an Anthropic API key first.' })
+      return
+    }
+    localStorage.setItem(AI_KEY_STORAGE, key)
+    localStorage.setItem(AI_MODEL_STORAGE, aiModel)
+    setAiStatus({ state: 'running' })
+    try {
+      const overrides = await runAiAnalysis(data, { apiKey: key, model: aiModel })
+      setData((prev) => ({ ...prev, assessmentText: { ...prev.assessmentText, ...overrides } }))
+      setAiStatus({ state: 'done', message: 'AI analysis applied. Every section is still editable below.' })
+    } catch (e) {
+      setAiStatus({ state: 'error', message: e instanceof Error ? e.message : 'AI analysis failed.' })
+    }
+  }, [aiKey, aiModel, data])
+
+  const clearAllOverrides = useCallback(() => {
+    if (confirm('Clear all AI/manual edits and rating overrides, returning to the auto-drafted assessment?')) {
+      setData((prev) => ({ ...prev, assessmentText: {} }))
+      setAiStatus({ state: 'idle' })
+    }
   }, [])
 
   const toggleHiddenSection = useCallback((id: string) => {
@@ -449,6 +486,36 @@ export default function App() {
               Narrative assessment auto-drafted from the form. Edit any finding below; edits are saved and used in the report.
               Recommended actions and the risk-priorities table are generated automatically.
             </p>
+
+            <details className="ai-panel">
+              <summary>AI analysis (optional) — reads your notes and correlates answers</summary>
+              <p className="ai-note">
+                Sends the full form (including notes) to the Anthropic API using <strong>your own API key</strong> to draft a
+                context-aware assessment. The key is stored only in this browser (localStorage) and sent directly to Anthropic;
+                it is <strong>not</strong> included in JSON exports. Runs cost money against your account. The rule-based draft
+                works with no key.
+              </p>
+              <div className="ai-controls">
+                <input
+                  type="password"
+                  className="ai-key"
+                  placeholder="Anthropic API key (sk-ant-...)"
+                  value={aiKey}
+                  onChange={(e) => setAiKey(e.target.value)}
+                  autoComplete="off"
+                />
+                <select value={aiModel} onChange={(e) => setAiModel(e.target.value)}>
+                  {AI_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+                <button className="btn primary" onClick={runAi} disabled={aiStatus.state === 'running'}>
+                  {aiStatus.state === 'running' ? 'Analyzing…' : 'Generate with AI'}
+                </button>
+                <button className="btn subtle" onClick={clearAllOverrides}>Reset to auto-draft</button>
+              </div>
+              {aiStatus.message && <p className={`ai-status ai-${aiStatus.state}`}>{aiStatus.message}</p>}
+            </details>
 
             <AssessmentEditor
               blockId="exec"
