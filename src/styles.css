@@ -54,26 +54,6 @@ h1 {
   color: var(--muted);
 }
 
-.progress {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.5rem 0.9rem;
-}
-
-.progress-count {
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-
-.progress-label {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -208,6 +188,45 @@ select:focus {
 .hint {
   font-size: 0.78rem;
   color: var(--muted);
+}
+
+/* Logo manager */
+.logo-manager {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.logo-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  height: 96px;
+  padding: 0.6rem 0.9rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.logo-preview img {
+  max-height: 100%;
+  max-width: 240px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.logo-empty {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 /* Image manager */

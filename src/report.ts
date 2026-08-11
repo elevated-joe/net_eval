@@ -45,12 +45,15 @@ function tableHtml(rows: Array<[string, string]>): string {
 export interface ReportOptions {
   /** Formatted date string to stamp on the report (caller supplies today's date). */
   date: string
+  /** Optional company logo (data URL) shown on the cover. */
+  logo?: string
 }
 
 export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   const client = has(val(d, 'clientName')) ? val(d, 'clientName') : 'Client'
   const preparedBy = val(d, 'preparedBy')
   const date = has(val(d, 'evaluationDate')) ? val(d, 'evaluationDate') : opts.date
+  const logo = opts.logo?.trim() ? opts.logo : ''
 
   const blocks: string[] = []
 
@@ -120,6 +123,7 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
   }
   .cover { border-bottom: 4px solid #1f6feb; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .cover-logo { max-height: 64px; max-width: 260px; width: auto; height: auto; display: block; margin-bottom: 1rem; }
   .cover .eyebrow { color: #1f6feb; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.72rem; margin: 0; }
   .cover h1 { margin: 0.35rem 0 0.75rem; font-size: 2rem; }
   .cover .meta { display: flex; flex-wrap: wrap; gap: 0.35rem 2rem; color: #4a5a6a; font-size: 0.9rem; }
@@ -154,6 +158,7 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
 <body>
   <div class="page">
     <header class="cover">
+      ${logo ? `<img class="cover-logo" src="${logo}" alt="">` : ''}
       <p class="eyebrow">Network Evaluation</p>
       <h1>${esc(client)}</h1>
       <div class="meta">
