@@ -170,3 +170,8 @@ export function emptyData(): EvalData {
   for (const s of SECTIONS) if (s.notes) fields[notesKey(s.id)] = ''
   return { fields, isps: [{ provider: '', speed: '' }] }
 }
+
+/** ISP entries that have at least a provider or a speed filled in. */
+export function activeIsps(d: EvalData): IspEntry[] {
+  return d.isps.filter((i) => (i.provider ?? '').trim() !== '' || (i.speed ?? '').trim() !== '')
+}
