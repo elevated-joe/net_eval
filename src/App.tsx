@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SECTIONS, emptyData, notesKey, type EvalData, type IspEntry } from './schema'
-import { buildObservations, buildSummary } from './summary'
+import { buildGapAnalysis } from './supportPlan'
 import { buildReportHtml } from './report'
 
 const STORAGE_KEY = 'net_eval.data.v2'
 
-type View = 'form' | 'summary' | 'report'
+type View = 'form' | 'gaps' | 'report'
 
 function loadData(): EvalData {
   try {
@@ -32,7 +32,6 @@ function todayIso(): string {
 export default function App() {
   const [data, setData] = useState<EvalData>(loadData)
   const [view, setView] = useState<View>('form')
-  const [copied, setCopied] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -65,8 +64,7 @@ export default function App() {
     }))
   }, [])
 
-  const summary = useMemo(() => buildSummary(data), [data])
-  const observations = useMemo(() => buildObservations(data), [data])
+  const gap = useMemo(() => buildGapAnalysis(data), [data])
   const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso() }), [data])
 
   const filledCount = useMemo(() => {
@@ -74,16 +72,6 @@ export default function App() {
     const ispCount = data.isps.filter((i) => i.provider.trim() || i.speed.trim()).length
     return fieldCount + ispCount
   }, [data])
-
-  const copySummary = async () => {
-    try {
-      await navigator.clipboard.writeText(summary)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      /* clipboard blocked — user can select manually */
-    }
-  }
 
   const download = (filename: string, content: string, mime: string) => {
     const blob = new Blob([content], { type: mime })
@@ -95,10 +83,10 @@ export default function App() {
     URL.revokeObjectURL(url)
   }
 
-  const clientSlug = (data.fields.clientName || 'client').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client'
+  const clientSlug =
+    (data.fields.clientName || 'client').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client'
 
   const exportJson = () => download(`${clientSlug}-network-evaluation.json`, JSON.stringify(data, null, 2), 'application/json')
-  const exportSummary = () => download(`${clientSlug}-executive-summary.txt`, summary, 'text/plain')
   const exportReport = () => download(`${clientSlug}-network-evaluation-report.html`, reportHtml, 'text/html')
 
   const printReport = () => {
@@ -110,7 +98,6 @@ export default function App() {
     w.document.open()
     w.document.write(reportHtml)
     w.document.close()
-    // Give the new document a tick to lay out before invoking print.
     w.onload = () => {
       w.focus()
       w.print()
@@ -143,7 +130,7 @@ export default function App() {
       <header className="app-header">
         <div>
           <h1>Network Evaluation</h1>
-          <p className="subtitle">Complete the intake form, then generate a client-ready report.</p>
+          <p className="subtitle">Complete the intake form, then review Peace of Mind gaps and generate a client report.</p>
         </div>
         <div className="progress" aria-label="Fields completed">
           <span className="progress-count">{filledCount}</span>
@@ -151,9 +138,11 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="tabs no-print">
+      <nav className="tabs">
         <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
-        <button className={`tab ${view === 'summary' ? 'active' : ''}`} onClick={() => setView('summary')}>Executive Summary</button>
+        <button className={`tab ${view === 'gaps' ? 'active' : ''}`} onClick={() => setView('gaps')}>
+          Support Plan Gaps{gap.gaps.length ? ` (${gap.gaps.length})` : ''}
+        </button>
         <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Client Report</button>
         <div className="tabs-spacer" />
         <button className="btn" onClick={exportJson}>Export data</button>
@@ -268,30 +257,65 @@ export default function App() {
         </main>
       )}
 
-      {view === 'summary' && (
-        <main className="summary-view">
-          {observations.length > 0 && (
+      {view === 'gaps' && (
+        <main className="gaps-view">
+          <section className="card">
+            <h2>Peace of Mind Support Plan — Gap Analysis</h2>
+            <div className="rec-banner">
+              <strong>{gap.gaps.length}</strong> managed-security gap{gap.gaps.length === 1 ? '' : 's'} identified. Suggested
+              starting plan: <strong>{gap.recommendedTier}</strong>.
+            </div>
+            <p className="section-desc">{gap.rationale}</p>
+            <table className="ga-table">
+              <thead>
+                <tr><th>Managed Control</th><th>Current State</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {gap.coverage.map((r) => (
+                  <tr key={r.control}>
+                    <td>
+                      {r.control}
+                      <span className="ga-cat">{r.category}</span>
+                    </td>
+                    <td>{r.currentState}</td>
+                    <td>
+                      <span className={`ga-pill ${r.status === 'gap' ? 'gap' : 'ok'}`}>
+                        {r.status === 'gap' ? 'Gap' : 'In place'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          {gap.advisories.length > 0 && (
             <section className="card observations">
-              <h2>Observations</h2>
+              <h2>Resilience & Best-Practice Notes</h2>
               <ul>
-                {observations.map((o, i) => (
-                  <li key={i} className={`obs obs-${o.severity}`}>
-                    <span className="obs-tag">{o.severity}</span>
-                    {o.text}
+                {gap.advisories.map((a, i) => (
+                  <li key={i} className={`obs obs-${a.severity}`}>
+                    <span className="obs-tag">{a.severity}</span>
+                    {a.text}
                   </li>
                 ))}
               </ul>
             </section>
           )}
+
           <section className="card">
-            <div className="summary-actions">
-              <h2>Executive Summary</h2>
-              <div className="summary-buttons">
-                <button className="btn" onClick={copySummary}>{copied ? 'Copied!' : 'Copy'}</button>
-                <button className="btn" onClick={exportSummary}>Download .txt</button>
-              </div>
-            </div>
-            <pre className="summary-text">{summary}</pre>
+            <h2>Enterprise Managed Hardware</h2>
+            <p className="section-desc">Optional upgrade — fold this hardware into Elevated Managed Hardware under the Enterprise plan.</p>
+            <table className="ga-table">
+              <tbody>
+                {gap.managedHardware.map((h) => (
+                  <tr key={h.item}>
+                    <td>{h.item}</td>
+                    <td>Current: {h.currentState}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </section>
         </main>
       )}
@@ -307,16 +331,15 @@ export default function App() {
               </div>
             </div>
             <p className="section-desc">
-              Client-presentable report. Use “Print / Save as PDF” for a PDF deliverable, or download the standalone HTML.
+              Client-presentable report with the Peace of Mind gap analysis. Use “Print / Save as PDF” for a PDF deliverable, or
+              download the standalone HTML.
             </p>
             <iframe className="report-preview" title="Client report preview" srcDoc={reportHtml} />
           </section>
         </main>
       )}
 
-      <footer className="app-footer no-print">
-        Data stays in your browser (localStorage). Export before switching devices.
-      </footer>
+      <footer className="app-footer">Data stays in your browser (localStorage). Export before switching devices.</footer>
     </div>
   )
 }

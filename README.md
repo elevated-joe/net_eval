@@ -17,11 +17,14 @@ deployed as a static site to GitHub Pages.
   NIST 800-171 / CMMC, GDPR, GLBA, FERPA, SOX, Other).
 - **Repeatable ISP list** — add/remove circuits with a **+ Add ISP** button.
 - **Per-section notes** captured on every section and carried into the report.
+- **Support Plan Gap Analysis** — maps the client's current-state answers
+  against the Elevated MSP **Peace of Mind** plan (Co-Managed / Remote /
+  Standard / Enterprise), flags missing managed controls (EDR, MFA, email
+  security, training, backups), lists resilience/best-practice notes, and
+  suggests a starting plan tier.
 - **Client Report** — a professional, client-presentable document with a cover
-  header, per-section data tables, and a prioritized recommendations table.
-  Preview it in-app, **download as standalone HTML**, or **Print → Save as PDF**.
-- **Executive summary** and automatic **observations** (single-ISP dependency,
-  missing MFA/backup, and other common gaps), fully client-side.
+  header, per-section data tables, and the Peace of Mind gap analysis. Preview
+  it in-app, **download as standalone HTML**, or **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import**.
 - No backend, no network calls — works offline once loaded.
 
@@ -52,7 +55,7 @@ net_eval/
 │   ├── main.tsx        # React entry point
 │   ├── App.tsx         # form + summary UI
 │   ├── schema.ts       # field definitions (single source of truth)
-│   ├── summary.ts      # executive-summary + observations generator
+│   ├── supportPlan.ts  # Peace of Mind support-plan gap analysis
 │   ├── report.ts       # client-presentable HTML report generator
 │   └── styles.css
 ├── vite.config.ts

@@ -2,12 +2,12 @@
 //
 // Produces a complete, standalone HTML document (inline styles, print-optimized
 // for US Letter) that presents the evaluation data professionally: a cover
-// header, per-section data tables, the executive summary narrative, and a
-// prioritized recommendations table. The same HTML is used for on-screen
-// preview, download, and Print → Save as PDF, so what you see is what you send.
+// header, per-section data tables, and a Peace of Mind support-plan gap
+// analysis. The same HTML is used for on-screen preview, download, and
+// Print → Save as PDF, so what you see is what you send.
 
-import { SECTIONS, notesKey, type EvalData } from './schema'
-import { activeIsps, buildObservations } from './summary'
+import { activeIsps, SECTIONS, notesKey, type EvalData } from './schema'
+import { buildGapAnalysis } from './supportPlan'
 
 function esc(s: string): string {
   return s
@@ -88,22 +88,45 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
     }
   }
 
-  // Observations / recommendations
-  const obs = buildObservations(d)
-  let recsHtml = ''
-  if (obs.length) {
-    const order = { risk: 0, gap: 1, note: 2 } as const
-    const sorted = [...obs].sort((a, b) => order[a.severity] - order[b.severity])
-    recsHtml =
-      '<section class="recs"><h2>Observations &amp; Recommendations</h2><table class="data"><thead><tr><th>Priority</th><th>Finding</th></tr></thead><tbody>' +
-      sorted
-        .map((o) => {
-          const label = o.severity === 'risk' ? 'Risk' : o.severity === 'gap' ? 'Gap' : 'Note'
-          return `<tr><td><span class="pill ${o.severity}">${label}</span></td><td>${esc(o.text)}</td></tr>`
-        })
-        .join('') +
-      '</tbody></table></section>'
-  }
+  // Peace of Mind support-plan gap analysis
+  const ga = buildGapAnalysis(d)
+
+  const coverageRows = ga.coverage
+    .map((r) => {
+      const label = r.status === 'gap' ? 'Gap' : 'In place'
+      const cls = r.status === 'gap' ? 'risk' : 'ok'
+      return `<tr><td>${esc(r.control)}</td><td>${esc(r.currentState)}</td><td><span class="pill ${cls}">${label}</span></td></tr>`
+    })
+    .join('')
+
+  const advisoryRows = ga.advisories
+    .map((a) => {
+      const label = a.severity === 'risk' ? 'Risk' : a.severity === 'gap' ? 'Gap' : 'Note'
+      return `<tr><td><span class="pill ${a.severity}">${label}</span></td><td>${esc(a.text)}</td></tr>`
+    })
+    .join('')
+
+  const hwRows = ga.managedHardware
+    .map((h) => `<tr><th>${esc(h.item)}</th><td>Current: ${esc(h.currentState)}</td></tr>`)
+    .join('')
+
+  const recsHtml =
+    '<section class="recs"><h2>Peace of Mind Support Plan — Gap Analysis</h2>' +
+    `<p class="rec-banner"><strong>${ga.gaps.length}</strong> managed-security gap(s) identified. ` +
+    `Suggested starting plan: <strong>${esc(ga.recommendedTier)}</strong>.</p>` +
+    `<p class="note">${esc(ga.rationale)}</p>` +
+    '<table class="data"><thead><tr><th>Managed Control</th><th>Current State</th><th>Status</th></tr></thead><tbody>' +
+    coverageRows +
+    '</tbody></table>' +
+    (advisoryRows
+      ? '<h2>Resilience &amp; Best-Practice Notes</h2><table class="data"><thead><tr><th>Priority</th><th>Finding</th></tr></thead><tbody>' +
+        advisoryRows +
+        '</tbody></table>'
+      : '') +
+    '<h2>Enterprise Managed Hardware (optional upgrade)</h2><table class="data"><tbody>' +
+    hwRows +
+    '</tbody></table>' +
+    '</section>'
 
   return `<!doctype html>
 <html lang="en">
@@ -141,6 +164,8 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   .pill.risk { background: #fde2e1; color: #b42318; }
   .pill.gap  { background: #fef0d3; color: #b25e09; }
   .pill.note { background: #d8eefe; color: #0b5cad; }
+  .pill.ok   { background: #d6f2e0; color: #0a6b3b; }
+  .rec-banner { background: #eef3f8; border-left: 4px solid #1f6feb; padding: 0.6rem 0.85rem; font-size: 0.92rem; margin: 0.5rem 0 0.75rem; }
   .exec { white-space: pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; background: #f7f9fb; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.9rem 1rem; }
   footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
   @media print {
