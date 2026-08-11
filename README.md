@@ -38,6 +38,15 @@ compiles the collected data into a client-presentable report. Built with
   overall risk rating, key focus areas, and priorities table. Sections can also
   be **excluded from the report** with a checkbox; excluded sections drop out of
   the output and stop counting toward the rollups.
+  - The rule-based engine also **reads the section notes**: keywords indicating
+    an incident (phishing/spoofing, ransomware, breach, outage, data loss)
+    escalate the related section and inject tailored language. Negative values
+    like "None" / "N/A" in a control field are treated as *not in place*.
+  - **Optional AI analysis**: enter your own Anthropic API key to have Claude
+    read the full form (notes included) and draft a context-aware assessment
+    that correlates answers across sections. Results write into the same
+    editable overrides. The key is stored only in your browser and is never
+    included in JSON exports.
 - Both reports: preview in-app, **download as standalone HTML**, or
   **Print → Save as PDF**.
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
@@ -74,8 +83,9 @@ net_eval/
 │   ├── App.tsx         # form + report UI
 │   ├── schema.ts          # field definitions (single source of truth)
 │   ├── supportPlan.ts     # Peace of Mind gap analysis (currently unwired)
-│   ├── assessment.ts      # narrative assessment engine (findings + risk)
+│   ├── assessment.ts      # narrative assessment engine (findings + risk + notes)
 │   ├── assessmentReport.ts# assessment report HTML generator
+│   ├── aiAnalysis.ts      # optional AI (Anthropic API) analysis
 │   ├── report.ts          # client-presentable data-report generator
 │   └── styles.css
 ├── vite.config.ts

@@ -416,6 +416,60 @@ select:focus {
   cursor: pointer;
 }
 
+/* AI analysis panel */
+.ai-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1.25rem;
+  background: var(--surface-2);
+}
+
+.ai-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.ai-note {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0.6rem 0 0.75rem;
+}
+
+.ai-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ai-key {
+  flex: 1 1 260px;
+  min-width: 200px;
+}
+
+.ai-controls select {
+  width: auto;
+}
+
+.ai-status {
+  font-size: 0.85rem;
+  margin: 0.6rem 0 0;
+}
+
+.ai-status.ai-done {
+  color: #22c55e;
+}
+
+.ai-status.ai-error {
+  color: var(--risk);
+}
+
+.ai-status.ai-running {
+  color: var(--muted);
+}
+
 /* Assessment editor */
 .assess-section {
   border: 1px solid var(--border);
