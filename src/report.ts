@@ -144,7 +144,6 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
   .images figure { margin: 0 0 0.6rem; page-break-inside: avoid; }
   .images img { width: 100%; height: auto; max-height: 4.5in; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 6px; display: block; background: #f7f9fb; }
   .images figcaption { font-size: 0.82rem; color: #4a5a6a; margin-top: 0.3rem; }
-  footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; color: #8895a3; font-size: 0.75rem; text-align: center; }
   /* Remove the browser's default print header/footer (date, title, URL, page number). */
   @page { size: letter; margin: 0; }
   @media print {
@@ -169,7 +168,6 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
     </header>
     ${blocks.join('\n')}
     ${imagesHtml}
-    <footer>Prepared for ${esc(client)}.</footer>
   </div>
 </body>
 </html>`
