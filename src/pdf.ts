@@ -94,12 +94,12 @@ export async function exportHtmlAsPdf(html: string, filename: string): Promise<v
         const y = Math.round((el.getBoundingClientRect().top - pageTop) * SCALE)
         if (y > 0 && y < H) breakSet.add(y)
       })
+    // Break only at top-level block boundaries so a section stays whole (its
+    // heading is never orphaned from its content — it moves to the next page as
+    // a unit). Individual figures are also break points so image-heavy sections
+    // can still spread across pages without cutting through an image.
     collect('.page > *')
-    collect('section')
-    collect('.figures')
     collect('figure')
-    collect('table.data')
-    collect('h2')
     const breaks = Array.from(breakSet).sort((a, b) => a - b)
 
     // Force a page break after the cover page, if present.
@@ -136,6 +136,19 @@ export async function exportHtmlAsPdf(html: string, filename: string): Promise<v
 
       pageIndex++
       y = end
+    }
+
+    // Page numbers in the bottom margin. Skip a standalone cover page (present
+    // only when the report has a full cover), and number the rest from 1.
+    const hasCover = forced > -1
+    const total = pdf.getNumberOfPages()
+    const offset = hasCover ? 1 : 0
+    for (let i = 1; i <= total; i++) {
+      if (hasCover && i === 1) continue
+      pdf.setPage(i)
+      pdf.setFontSize(8)
+      pdf.setTextColor(140, 140, 140)
+      pdf.text(`Page ${i - offset} of ${total - offset}`, pageWpt / 2, pageHpt - 8, { align: 'center' })
     }
 
     pdf.save(filename)
