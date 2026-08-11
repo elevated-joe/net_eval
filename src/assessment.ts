@@ -11,10 +11,21 @@ import { activeIsps, parseChecklist, type EvalData } from './schema'
 
 export type Rating = 'Good' | 'Attention' | 'At Risk' | 'Informational' | 'Not Assessed'
 
+export const RATINGS: Rating[] = ['At Risk', 'Attention', 'Good', 'Informational', 'Not Assessed']
+
+export function isRating(v: string): v is Rating {
+  return (RATINGS as string[]).includes(v)
+}
+
 export interface AssessmentSection {
   id: string
   title: string
+  /** Effective rating (manual override if set, otherwise the auto rating). */
   rating: Rating
+  /** The auto-computed rating, before any manual override (set by buildAssessment). */
+  autoRating?: Rating
+  /** True when the rating was manually overridden (set by buildAssessment). */
+  ratingOverridden?: boolean
   /** Technical finding paragraph. */
   finding: string
   /** Plain-language, client-facing recommendation. */
@@ -468,6 +479,18 @@ export function buildAssessment(d: EvalData): Assessment {
     organizationSection(d),
   ]
 
+  // Record the auto rating and apply any manual rating override.
+  for (const s of sections) {
+    s.autoRating = s.rating
+    const ov = d.assessmentText?.[`rating__${s.id}`]
+    if (ov && isRating(ov)) {
+      s.rating = ov
+      s.ratingOverridden = ov !== s.autoRating
+    } else {
+      s.ratingOverridden = false
+    }
+  }
+
   const atRisk = sections.filter((s) => s.rating === 'At Risk')
   const attention = sections.filter((s) => s.rating === 'Attention')
   const overallRating = ratingFor(atRisk.length, attention.length)
@@ -493,12 +516,12 @@ export function buildAssessment(d: EvalData): Assessment {
       ? `, driven by ${flagged.length} area${flagged.length === 1 ? '' : 's'} requiring attention across resilience, security, and infrastructure management that together increase the likelihood and impact of a cyber incident or prolonged outage.`
       : '. No high-severity gaps were identified, though routine validation and monitoring should continue.')
 
-  const keyIndicators = flagged.map((s) => s.indicator!).filter(Boolean)
+  const keyIndicators = flagged.map((s) => s.indicator ?? `${s.title} requires attention.`)
 
   const priorities: PriorityRow[] = [
-    ...atRisk.map((s) => ({ priority: 'High' as const, area: s.title, reason: s.reason ?? '' })),
-    ...attention.map((s) => ({ priority: 'Medium' as const, area: s.title, reason: s.reason ?? '' })),
-  ].filter((p) => p.reason)
+    ...atRisk.map((s) => ({ priority: 'High' as const, area: s.title, reason: s.reason ?? `${s.title} requires remediation.` })),
+    ...attention.map((s) => ({ priority: 'Medium' as const, area: s.title, reason: s.reason ?? `${s.title} should be reviewed.` })),
+  ]
 
   const highAreas = englishList(atRisk.map((s) => s.title.toLowerCase()))
   const medAreas = englishList(attention.map((s) => s.title.toLowerCase()))

@@ -9,7 +9,7 @@ import {
   type ReportImage,
 } from './schema'
 import { buildReportHtml } from './report'
-import { buildAssessment } from './assessment'
+import { buildAssessment, RATINGS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
 
 const STORAGE_KEY = 'net_eval.data.v2'
@@ -458,10 +458,36 @@ export default function App() {
             />
             {assessment.sections.map((s) => (
               <div key={s.id} className="assess-section">
+                <div className="assess-section-head">
+                  <h3>
+                    {s.title}
+                    <span className={`ga-pill ${RATING_CLASS[s.rating] ?? 'info'}`}>{s.rating}</span>
+                  </h3>
+                  <div className="rating-control">
+                    <label htmlFor={`rating__${s.id}`}>Impact</label>
+                    <select
+                      id={`rating__${s.id}`}
+                      value={s.rating}
+                      onChange={(e) => setAssessmentOverride(`rating__${s.id}`, e.target.value)}
+                    >
+                      {RATINGS.map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                    {s.ratingOverridden && (
+                      <button
+                        className="btn subtle rating-reset"
+                        onClick={() => clearAssessmentOverride(`rating__${s.id}`)}
+                        title={`Reset to auto (${s.autoRating})`}
+                      >
+                        auto: {s.autoRating} ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <AssessmentEditor
                   blockId={`client__${s.id}`}
-                  label={s.title}
-                  badge={s.rating}
+                  label="Client recommendation"
                   auto={s.clientRecommendation}
                   value={data.assessmentText[`client__${s.id}`]}
                   onChange={setAssessmentOverride}
