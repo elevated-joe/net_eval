@@ -4,14 +4,14 @@
 // generator, and the client report are all derived from it. Field keys mirror
 // the intake template used for network assessments.
 
-export type FieldType = 'text' | 'number' | 'textarea' | 'select'
+export type FieldType = 'text' | 'number' | 'textarea' | 'select' | 'checklist'
 
 export interface FieldDef {
   key: string
   label: string
   type: FieldType
   placeholder?: string
-  /** Options for `select` fields. */
+  /** Options for `select` and `checklist` fields. */
   options?: string[]
   /** Optional short helper shown under the input. */
   hint?: string
@@ -44,6 +44,20 @@ export const COMPLIANCE_OPTIONS = [
   'Other',
 ]
 
+export const M365_SERVICES = ['Exchange', 'SharePoint', 'Teams', 'Intune', 'MDM', 'OneDrive']
+export const DOMAIN_OPTIONS = ['Domain', 'Entra ID (Azure AD)', 'Hybrid (AD + Entra)', 'Workgroup']
+export const MFA_COVERAGE_OPTIONS = ['All services', 'Webmail only', 'Partial', 'None', 'Unknown']
+export const FIREWALL_TYPE_OPTIONS = ['Next-gen (supported)', 'Open-source', 'Unknown']
+export const YES_NO_UNKNOWN = ['Yes', 'No', 'Unknown']
+
+/** Parse a checklist field's comma-separated value into selected options. */
+export function parseChecklist(value: string | undefined): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 export const SECTIONS: SectionDef[] = [
   {
     id: 'client',
@@ -75,6 +89,35 @@ export const SECTIONS: SectionDef[] = [
     ],
   },
   {
+    id: 'identity',
+    title: 'Identity & Microsoft 365',
+    description: 'Directory model, cloud services in use, and MFA coverage.',
+    notes: true,
+    fields: [
+      {
+        key: 'domainType',
+        label: 'Domain / Entra / Workgroup',
+        type: 'select',
+        options: DOMAIN_OPTIONS,
+      },
+      {
+        key: 'm365Services',
+        label: 'Microsoft 365 Services Utilized',
+        type: 'checklist',
+        options: M365_SERVICES,
+      },
+      { key: 'm365Other', label: 'Other M365 Services', type: 'text', placeholder: 'e.g. Power BI, Bookings' },
+      { key: 'm365Licensing', label: 'Microsoft 365 Licensing', type: 'text', placeholder: 'e.g. Business Premium, Apps for business' },
+      {
+        key: 'mfaCoverage',
+        label: 'MFA Coverage',
+        type: 'select',
+        options: MFA_COVERAGE_OPTIONS,
+        hint: 'How broadly MFA is enforced across Microsoft 365.',
+      },
+    ],
+  },
+  {
     id: 'connectivity',
     title: 'Internet & Connectivity',
     description: 'Add each internet circuit. Use “+ Add ISP” for multiple providers.',
@@ -89,6 +132,7 @@ export const SECTIONS: SectionDef[] = [
     notes: true,
     fields: [
       { key: 'firewall', label: 'Firewall (Make/Model)', type: 'text', placeholder: 'e.g. Fortinet FortiGate 100F' },
+      { key: 'firewallType', label: 'Firewall Platform Type', type: 'select', options: FIREWALL_TYPE_OPTIONS },
       { key: 'switch', label: 'Switch (Make/Model)', type: 'text', placeholder: 'e.g. Cisco Catalyst 9200' },
       { key: 'wireless', label: 'Wireless (Make/Model)', type: 'text', placeholder: 'e.g. Ubiquiti UniFi U6-Pro' },
       { key: 'server', label: 'Server (Make/Model)', type: 'text', placeholder: 'e.g. Dell PowerEdge R650' },
@@ -103,6 +147,8 @@ export const SECTIONS: SectionDef[] = [
     fields: [
       { key: 'hypervisor', label: 'Hypervisor Solution', type: 'text', placeholder: 'e.g. VMware vSphere, Hyper-V' },
       { key: 'backup', label: 'Backup Solution', type: 'text', placeholder: 'e.g. Veeam, Datto' },
+      { key: 'backupTested', label: 'Restore Testing Verified', type: 'select', options: YES_NO_UNKNOWN },
+      { key: 'backupOffsite', label: 'Offsite / Immutable Copy', type: 'select', options: YES_NO_UNKNOWN },
     ],
   },
   {
@@ -116,6 +162,8 @@ export const SECTIONS: SectionDef[] = [
       { key: 'av', label: 'AV / Endpoint Solution', type: 'text', placeholder: 'e.g. SentinelOne, CrowdStrike' },
       { key: 'contentFilter', label: 'Content Filtering Solution', type: 'text', placeholder: 'e.g. Cisco Umbrella' },
       { key: 'training', label: 'End-user Training', type: 'text', placeholder: 'e.g. KnowBe4' },
+      { key: 'remoteAccess', label: 'Remote Access Methods', type: 'text', placeholder: 'e.g. VPN, RDP, jump box' },
+      { key: 'remoteAccessMfa', label: 'Remote Access MFA', type: 'select', options: YES_NO_UNKNOWN },
     ],
   },
   {
@@ -175,6 +223,8 @@ export interface EvalData {
   isps: IspEntry[]
   /** Images embedded into the client report. */
   images: ReportImage[]
+  /** Manual edits to auto-drafted assessment text, keyed by block id (e.g. 'exec', 'finding__backup'). */
+  assessmentText: Record<string, string>
 }
 
 /** localStorage key for section notes: notes__<sectionId>. */
@@ -187,7 +237,7 @@ export function emptyData(): EvalData {
   const fields: Record<string, string> = {}
   for (const f of ALL_FIELDS) fields[f.key] = ''
   for (const s of SECTIONS) if (s.notes) fields[notesKey(s.id)] = ''
-  return { fields, isps: [{ provider: '', speed: '' }], images: [] }
+  return { fields, isps: [{ provider: '', speed: '' }], images: [], assessmentText: {} }
 }
 
 /** ISP entries that have at least a provider or a speed filled in. */
