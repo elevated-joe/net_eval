@@ -1,10 +1,10 @@
 // Executive-summary generator.
 //
-// Turns the intake form data into a readable, plain-text executive summary and
-// a set of observations. All logic is client-side and rule-based — no network
-// calls — so the app works fully offline as a static page.
+// Turns the intake data into a readable, plain-text executive summary and a set
+// of observations. All logic is client-side and rule-based — no network calls —
+// so the app works fully offline as a static page.
 
-import type { FormData } from './schema'
+import type { EvalData } from './schema'
 
 export interface Observation {
   severity: 'risk' | 'gap' | 'note'
@@ -12,7 +12,12 @@ export interface Observation {
 }
 
 const has = (v: string | undefined): boolean => !!v && v.trim().length > 0
-const val = (d: FormData, k: string): string => (d[k] ?? '').trim()
+const val = (d: EvalData, k: string): string => (d.fields[k] ?? '').trim()
+
+/** ISP entries that have at least a provider or a speed filled in. */
+export function activeIsps(d: EvalData): { provider: string; speed: string }[] {
+  return d.isps.filter((i) => has(i.provider) || has(i.speed))
+}
 
 /** Human-friendly join: ["a","b","c"] -> "a, b, and c". */
 function list(items: string[]): string {
@@ -23,14 +28,18 @@ function list(items: string[]): string {
   return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`
 }
 
-export function buildObservations(d: FormData): Observation[] {
+const hasCompliance = (d: EvalData): boolean => {
+  const c = val(d, 'compliance')
+  return has(c) && c !== 'None'
+}
+
+export function buildObservations(d: EvalData): Observation[] {
   const obs: Observation[] = []
 
-  const ispCount = parseInt(val(d, 'ispCount'), 10)
-  if (!Number.isNaN(ispCount) && ispCount <= 1) {
+  if (activeIsps(d).length <= 1) {
     obs.push({
       severity: 'risk',
-      text: 'Single ISP connection is a single point of failure. Consider a secondary provider or failover circuit for resilience.',
+      text: 'Single internet circuit is a single point of failure. Consider a secondary provider or failover circuit for resilience.',
     })
   }
 
@@ -64,18 +73,19 @@ export function buildObservations(d: FormData): Observation[] {
   if (!has(val(d, 'ups'))) {
     obs.push({ severity: 'gap', text: 'No UPS recorded. Confirm power protection for critical equipment.' })
   }
-  if (has(val(d, 'compliance'))) {
+  if (hasCompliance(d)) {
     obs.push({
       severity: 'note',
-      text: `Environment is subject to compliance requirements (${val(d, 'compliance')}); controls should be mapped against those frameworks.`,
+      text: `Environment is subject to ${val(d, 'compliance')} requirements; controls should be mapped against that framework.`,
     })
   }
 
   return obs
 }
 
-export function buildSummary(d: FormData): string {
+export function buildSummary(d: EvalData): string {
   const lines: string[] = []
+  const client = has(val(d, 'clientName')) ? val(d, 'clientName') : 'the client'
   const industry = has(val(d, 'industry')) ? `${val(d, 'industry').toLowerCase()} ` : ''
 
   lines.push('EXECUTIVE SUMMARY — NETWORK EVALUATION')
@@ -90,19 +100,21 @@ export function buildSummary(d: FormData): string {
   const scale = scaleParts.length ? `spanning ${list(scaleParts)}` : 'of undocumented scale'
   lines.push('OVERVIEW')
   lines.push(
-    `This assessment covers a ${industry}environment ${scale}.` +
+    `This assessment covers ${client}, a ${industry}environment ${scale}.` +
       (has(val(d, 'currentProvider')) ? ` Network operations are currently handled by ${val(d, 'currentProvider')}.` : '') +
-      (has(val(d, 'compliance')) ? ` The organization is subject to ${val(d, 'compliance')} requirements.` : ''),
+      (hasCompliance(d) ? ` The organization is subject to ${val(d, 'compliance')} requirements.` : ''),
   )
   lines.push('')
 
   // Connectivity
-  if (has(val(d, 'ispCount')) || has(val(d, 'ispSpeed'))) {
+  const isps = activeIsps(d)
+  if (isps.length) {
     lines.push('CONNECTIVITY')
-    const c: string[] = []
-    if (has(val(d, 'ispCount'))) c.push(`${val(d, 'ispCount')} ISP provider(s)`)
-    if (has(val(d, 'ispSpeed'))) c.push(`circuits rated at ${val(d, 'ispSpeed')}`)
-    lines.push(`Internet is delivered via ${list(c)}.`)
+    lines.push(`Internet is delivered via ${isps.length} circuit(s):`)
+    for (const i of isps) {
+      const label = [i.provider, i.speed].filter((x) => x && x.trim()).join(' — ')
+      lines.push(`  • ${label || '(unspecified)'}`)
+    }
     lines.push('')
   }
 
@@ -166,10 +178,9 @@ export function buildSummary(d: FormData): string {
     ['Fiscal year', val(d, 'fiscalYear')],
   ]
   const bizPresent = biz.filter(([, v]) => has(v))
-  if (bizPresent.length || has(val(d, 'misc'))) {
+  if (bizPresent.length) {
     lines.push('BUSINESS CONTEXT')
     for (const [label, v] of bizPresent) lines.push(`  • ${label}: ${v}`)
-    if (has(val(d, 'misc'))) lines.push(`  • Notes: ${val(d, 'misc')}`)
     lines.push('')
   }
 
