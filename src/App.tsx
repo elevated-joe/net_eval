@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { SECTIONS, emptyData, notesKey, type EvalData, type IspEntry, type ReportImage } from './schema'
+import {
+  SECTIONS,
+  emptyData,
+  notesKey,
+  parseChecklist,
+  type EvalData,
+  type IspEntry,
+  type ReportImage,
+} from './schema'
 import { buildReportHtml } from './report'
+import { buildAssessment } from './assessment'
+import { buildAssessmentHtml } from './assessmentReport'
 
 const STORAGE_KEY = 'net_eval.data.v2'
 const MAX_IMAGE_DIM = 1600
 
-type View = 'form' | 'report'
+type View = 'form' | 'report' | 'assessment'
 
 function hydrate(parsed: Partial<EvalData>): EvalData {
   const base = emptyData()
@@ -13,6 +23,8 @@ function hydrate(parsed: Partial<EvalData>): EvalData {
     fields: { ...base.fields, ...(parsed.fields ?? {}) },
     isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
     images: Array.isArray(parsed.images) ? parsed.images : base.images,
+    assessmentText:
+      parsed.assessmentText && typeof parsed.assessmentText === 'object' ? parsed.assessmentText : base.assessmentText,
   }
 }
 
@@ -88,6 +100,26 @@ export default function App() {
     setData((prev) => ({ ...prev, fields: { ...prev.fields, [key]: value } }))
   }, [])
 
+  const toggleChecklist = useCallback((key: string, option: string) => {
+    setData((prev) => {
+      const current = parseChecklist(prev.fields[key])
+      const next = current.includes(option) ? current.filter((o) => o !== option) : [...current, option]
+      return { ...prev, fields: { ...prev.fields, [key]: next.join(', ') } }
+    })
+  }, [])
+
+  const setAssessmentOverride = useCallback((blockId: string, value: string) => {
+    setData((prev) => ({ ...prev, assessmentText: { ...prev.assessmentText, [blockId]: value } }))
+  }, [])
+
+  const clearAssessmentOverride = useCallback((blockId: string) => {
+    setData((prev) => {
+      const next = { ...prev.assessmentText }
+      delete next[blockId]
+      return { ...prev, assessmentText: next }
+    })
+  }, [])
+
   const updateIsp = useCallback((index: number, patch: Partial<IspEntry>) => {
     setData((prev) => ({
       ...prev,
@@ -128,6 +160,8 @@ export default function App() {
   }, [])
 
   const reportHtml = useMemo(() => buildReportHtml(data, { date: todayIso() }), [data])
+  const assessment = useMemo(() => buildAssessment(data), [data])
+  const assessmentHtml = useMemo(() => buildAssessmentHtml(data, { date: todayIso() }), [data])
 
   const filledCount = useMemo(() => {
     const fieldCount = Object.values(data.fields).filter((v) => v.trim().length > 0).length
@@ -150,15 +184,16 @@ export default function App() {
 
   const exportJson = () => download(`${clientSlug}-network-evaluation.json`, JSON.stringify(data, null, 2), 'application/json')
   const exportReport = () => download(`${clientSlug}-network-evaluation-report.html`, reportHtml, 'text/html')
+  const exportAssessment = () => download(`${clientSlug}-network-assessment.html`, assessmentHtml, 'text/html')
 
-  const printReport = () => {
+  const printHtml = (html: string) => {
     const w = window.open('', '_blank')
     if (!w) {
       alert('Please allow pop-ups to open the printable report.')
       return
     }
     w.document.open()
-    w.document.write(reportHtml)
+    w.document.write(html)
     w.document.close()
     w.onload = () => {
       w.focus()
@@ -198,6 +233,7 @@ export default function App() {
       <nav className="tabs">
         <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
         <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Client Report</button>
+        <button className={`tab ${view === 'assessment' ? 'active' : ''}`} onClick={() => setView('assessment')}>Assessment Report</button>
         <div className="tabs-spacer" />
         <button className="btn" onClick={exportJson}>Export data</button>
         <button className="btn" onClick={() => fileInput.current?.click()}>Import</button>
@@ -225,7 +261,7 @@ export default function App() {
               {section.fields.length > 0 && (
                 <div className="fields">
                   {section.fields.map((f) => (
-                    <div key={f.key} className={`field ${f.type === 'textarea' ? 'field-wide' : ''}`}>
+                    <div key={f.key} className={`field ${f.type === 'textarea' || f.type === 'checklist' ? 'field-wide' : ''}`}>
                       <label htmlFor={f.key}>{f.label}</label>
                       {f.type === 'textarea' ? (
                         <textarea
@@ -242,6 +278,22 @@ export default function App() {
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
+                      ) : f.type === 'checklist' ? (
+                        <div className="checklist">
+                          {f.options?.map((opt) => {
+                            const selected = parseChecklist(data.fields[f.key]).includes(opt)
+                            return (
+                              <label key={opt} className={`checkbox ${selected ? 'checked' : ''}`}>
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleChecklist(f.key, opt)}
+                                />
+                                {opt}
+                              </label>
+                            )
+                          })}
+                        </div>
                       ) : (
                         <input
                           id={f.key}
@@ -360,7 +412,7 @@ export default function App() {
             <div className="summary-actions">
               <h2>Client Report</h2>
               <div className="summary-buttons">
-                <button className="btn primary" onClick={printReport}>Print / Save as PDF</button>
+                <button className="btn primary" onClick={() => printHtml(reportHtml)}>Print / Save as PDF</button>
                 <button className="btn" onClick={exportReport}>Download .html</button>
               </div>
             </div>
@@ -373,7 +425,115 @@ export default function App() {
         </main>
       )}
 
+      {view === 'assessment' && (
+        <main className="assessment-view">
+          <section className="card">
+            <div className="summary-actions">
+              <h2>Assessment Report</h2>
+              <div className="summary-buttons">
+                <button className="btn primary" onClick={() => printHtml(assessmentHtml)}>Print / Save as PDF</button>
+                <button className="btn" onClick={exportAssessment}>Download .html</button>
+              </div>
+            </div>
+            <p className="section-desc">
+              Narrative assessment auto-drafted from the form. Edit any finding below; edits are saved and used in the report.
+              Recommended actions and the risk-priorities table are generated automatically.
+            </p>
+
+            <AssessmentEditor
+              blockId="exec"
+              label="Executive Summary"
+              auto={assessment.execSummary}
+              value={data.assessmentText.exec}
+              onChange={setAssessmentOverride}
+              onReset={clearAssessmentOverride}
+            />
+            <AssessmentEditor
+              blockId="overall"
+              label={`Overall Risk Assessment — ${assessment.overallRating}`}
+              auto={assessment.overall}
+              value={data.assessmentText.overall}
+              onChange={setAssessmentOverride}
+              onReset={clearAssessmentOverride}
+            />
+            {assessment.domains.map((dom) => (
+              <AssessmentEditor
+                key={dom.id}
+                blockId={`finding__${dom.id}`}
+                label={dom.title}
+                badge={dom.risk}
+                auto={dom.finding}
+                actions={dom.actions}
+                value={data.assessmentText[`finding__${dom.id}`]}
+                onChange={setAssessmentOverride}
+                onReset={clearAssessmentOverride}
+              />
+            ))}
+            <AssessmentEditor
+              blockId="nextSteps"
+              label="Recommended Next Steps"
+              auto={assessment.nextSteps}
+              value={data.assessmentText.nextSteps}
+              onChange={setAssessmentOverride}
+              onReset={clearAssessmentOverride}
+            />
+          </section>
+
+          <section className="card">
+            <h2>Report Preview</h2>
+            <iframe className="report-preview" title="Assessment report preview" srcDoc={assessmentHtml} />
+          </section>
+        </main>
+      )}
+
       <footer className="app-footer">Data stays in your browser (localStorage). Export before switching devices.</footer>
+    </div>
+  )
+}
+
+interface AssessmentEditorProps {
+  blockId: string
+  label: string
+  auto: string
+  value: string | undefined
+  badge?: string
+  actions?: string[]
+  onChange: (blockId: string, value: string) => void
+  onReset: (blockId: string) => void
+}
+
+function AssessmentEditor({ blockId, label, auto, value, badge, actions, onChange, onReset }: AssessmentEditorProps) {
+  const edited = value !== undefined
+  const badgeClass = badge ? badge.toLowerCase() : ''
+  return (
+    <div className="assess-block">
+      <div className="assess-head">
+        <h3>
+          {label}
+          {badge && <span className={`ga-pill ${badgeClass}`}>{badge}</span>}
+        </h3>
+        {edited && (
+          <button className="btn subtle" onClick={() => onReset(blockId)} title="Reset to auto-draft">
+            Reset to auto-draft
+          </button>
+        )}
+      </div>
+      <textarea
+        className="assess-text"
+        rows={4}
+        value={edited ? value : auto}
+        onChange={(e) => onChange(blockId, e.target.value)}
+      />
+      {actions && actions.length > 0 && (
+        <div className="assess-actions">
+          <span className="assess-actions-label">Recommended actions (auto)</span>
+          <ul>
+            {actions.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
