@@ -91,7 +91,7 @@ net_eval/
 │   ├── main.tsx        # React entry point
 │   ├── App.tsx         # form + report UI
 │   ├── schema.ts          # field definitions (single source of truth)
-│   ├── brand.ts           # default company logo (Elevated MSP) as an SVG data URL
+│   ├── brand.ts           # default company logo (Elevated MSP) as a base64 PNG data URL
 │   ├── supportPlan.ts     # Peace of Mind gap analysis (currently unwired)
 │   ├── assessment.ts      # narrative assessment engine (findings + risk + notes)
 │   ├── assessmentReport.ts# assessment report HTML generator
