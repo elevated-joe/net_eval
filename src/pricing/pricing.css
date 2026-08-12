@@ -1,0 +1,668 @@
+/* Pricing calculator styles — ported from pricing_cal and scoped under
+   .pricing-view so its theme variables and rules never leak into the rest
+   of the app. Generated from pricing_cal/src/styles.css. */
+
+.pricing-view {
+  --bg: #f4f6fb;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --border: #e3e8f0;
+  --text: #1b2333;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --accent-soft: #eff4ff;
+  --good: #0f9d58;
+  --shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+.pricing-view {
+    --bg: #0e1320;
+    --panel: #161c2b;
+    --panel-2: #1b2233;
+    --border: #29324a;
+    --text: #e8edf7;
+    --muted: #93a1bb;
+    --accent: #5b8cff;
+    --accent-soft: #1a2540;
+    --good: #35c46f;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+}
+.pricing-view * {
+  box-sizing: border-box;
+}
+.pricing-view {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.pricing-view .app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.pricing-view .app-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.pricing-view .app-header h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+.pricing-view .tagline {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.pricing-view .layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+.pricing-view .layout {
+    grid-template-columns: 1fr;
+  }
+}
+.pricing-view .sidebar {
+  position: sticky;
+  top: 24px;
+}
+.pricing-view .inputs {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.pricing-view .inputs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.pricing-view .inputs-head h2 {
+  margin: 0;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.pricing-view .reset {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pricing-view .reset:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pricing-view .field {
+  margin-bottom: 14px;
+}
+.pricing-view .field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.pricing-view .field input[type="number"], .pricing-view .field select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+}
+.pricing-view .field input:focus, .pricing-view .field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.pricing-view .field small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.pricing-view .field.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.pricing-view .field.checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.pricing-view .content-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.pricing-view .content section {
+  margin-bottom: 28px;
+}
+.pricing-view .plan-grid {
+  display: grid;
+  /* Fixed two columns => a 2×2 tier grid: Co-Managed | Remote on top,
+     Standard | Enterprise on the bottom. Collapses to one column on mobile. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 560px) {
+.pricing-view .plan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pricing-view .plan-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+.pricing-view .plan-card.featured {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+}
+.pricing-view .plan-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.pricing-view .plan-price {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+}
+.pricing-view .plan-price .per {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 3px;
+}
+.pricing-view .breakdown {
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.pricing-view .breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  color: var(--muted);
+}
+.pricing-view .plan-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  margin: 0;
+}
+.pricing-view .plan-meta dt {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pricing-view .plan-meta dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.pricing-view .section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.pricing-view .section > summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  list-style: none;
+  user-select: none;
+}
+.pricing-view .section > summary::-webkit-details-marker {
+  display: none;
+}
+.pricing-view .section > summary::before {
+  content: "▸";
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.pricing-view .section[open] > summary::before {
+  transform: rotate(90deg);
+}
+.pricing-view .section-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.pricing-view .section-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-left: auto;
+}
+.pricing-view .section-body {
+  padding: 0 18px 18px;
+}
+.pricing-view .labor-tier {
+  margin-top: 14px;
+}
+.pricing-view .labor-tier h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pricing-view .mini-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pricing-view .table-scroll {
+  overflow-x: auto;
+}
+.pricing-view .line-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pricing-view .line-table th, .pricing-view .line-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.pricing-view .line-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+}
+.pricing-view .line-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pricing-view .line-table .col-label {
+  white-space: normal;
+  min-width: 200px;
+}
+.pricing-view .line-table tfoot td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+}
+.pricing-view .section-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pricing-view .unit-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+.pricing-view .unit-edit input {
+  width: 56px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.pricing-view .unit-edit input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.pricing-view .unit-edit input.overridden {
+  border-color: var(--accent);
+  font-weight: 700;
+  color: var(--accent);
+}
+.pricing-view .unit-reset {
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px;
+  border-radius: 4px;
+}
+.pricing-view .unit-reset:hover {
+  background: var(--accent-soft);
+}
+.pricing-view .btn {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pricing-view .btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pricing-view .btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pricing-view .btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pricing-view .btn.primary:hover {
+  color: #fff;
+  filter: brightness(1.06);
+}
+.pricing-view .btn.add {
+  padding: 6px 12px;
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+.pricing-view .edit-toggle {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pricing-view .edit-toggle.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pricing-view .edit-toggle .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.pricing-view .header-actions {
+  display: flex;
+  gap: 10px;
+  align-self: center;
+}
+.pricing-view .modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 16, 28, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  z-index: 50;
+  overflow-y: auto;
+}
+.pricing-view .modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 560px;
+  padding: 22px;
+}
+.pricing-view .modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pricing-view .modal-head h2 {
+  margin: 0;
+  font-size: 19px;
+}
+.pricing-view .modal-close {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pricing-view .modal-close:hover {
+  color: var(--text);
+}
+.pricing-view .modal-sub {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pricing-view .modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.pricing-view .modal-grid .field {
+  margin: 0;
+}
+.pricing-view .modal-grid .field.span2 {
+  grid-column: 1 / -1;
+}
+.pricing-view .modal-grid .field span {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.pricing-view .modal-grid input, .pricing-view .modal-grid select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+}
+.pricing-view .modal-grid input:focus, .pricing-view .modal-grid select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.pricing-view .plan-select {
+  margin-top: 16px;
+}
+.pricing-view .plan-select-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.pricing-view .plan-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pricing-view .chip {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pricing-view .chip.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.pricing-view .modal-error {
+  margin: 14px 0 0;
+  color: #e5484d;
+  font-size: 13px;
+}
+.pricing-view .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.pricing-view .editor-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.pricing-view .editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.pricing-view .editor-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+.pricing-view .editor-h {
+  margin: 20px 0 6px;
+  font-size: 14px;
+}
+.pricing-view .edit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pricing-view .edit-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 6px 8px;
+  white-space: nowrap;
+}
+.pricing-view .edit-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.pricing-view .edit-table .num {
+  text-align: right;
+}
+.pricing-view .cell-text, .pricing-view .cell-num, .pricing-view .cell-select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 13px;
+  padding: 5px 7px;
+}
+.pricing-view .cell-text {
+  width: 100%;
+  min-width: 160px;
+}
+.pricing-view .cell-num {
+  width: 84px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+.pricing-view .cell-select {
+  min-width: 118px;
+}
+.pricing-view .cell-text:focus, .pricing-view .cell-num:focus, .pricing-view .cell-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.pricing-view .cell-muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+.pricing-view .row-del {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.pricing-view .row-del:hover {
+  color: #e5484d;
+  background: rgba(229, 72, 77, 0.1);
+}
+.pricing-view .labor-edit-tier {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.pricing-view .labor-edit-tier h5 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.pricing-view .labor-edit-sub {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 8px 0 2px;
+}
+.pricing-view .app-footer {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+.pricing-view .app-footer code {
+  background: var(--panel-2);
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+/* Toolbar for the embedded pricing tab (replaces pricing_cal's .app-header). */
+.pricing-view .pricing-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.pricing-view .pricing-toolbar .content-title { margin: 0; }

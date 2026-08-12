@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   SECTIONS,
   emptyData,
@@ -13,6 +13,11 @@ import { buildAssessment, RATINGS, ASSESSMENT_SECTIONS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
 import { runAiAnalysis, AI_MODELS } from './aiAnalysis'
 import { DEFAULT_LOGO } from './brand'
+import { prefillFromEvalData } from './pricing/prefill'
+import { DEFAULT_INPUTS, type PricingInputs } from './pricing/lib/inputs'
+
+// Lazy-loaded: keeps jszip + the pricing UI out of the initial bundle.
+const PricingTab = lazy(() => import('./pricing/PricingTab').then((m) => ({ default: m.PricingTab })))
 
 const AI_KEY_STORAGE = 'net_eval.ai.key'
 const AI_MODEL_STORAGE = 'net_eval.ai.model'
@@ -24,7 +29,7 @@ const STORAGE_KEY = 'net_eval.data.v2'
 const MAX_IMAGE_DIM = 1600
 const MAX_LOGO_DIM = 600
 
-type View = 'form' | 'report' | 'assessment'
+type View = 'form' | 'report' | 'assessment' | 'pricing'
 
 function hydrate(parsed: Partial<EvalData>): EvalData {
   const base = emptyData()
@@ -153,6 +158,13 @@ export default function App() {
     const v = localStorage.getItem(LOGO_STORAGE)
     return v === null ? DEFAULT_LOGO : v
   })
+
+  // Pricing deal inputs — lifted here so they persist across tab switches.
+  // Seeded from the assessment counts (users / locations / devices) captured so far.
+  const [pricingInputs, setPricingInputs] = useState<PricingInputs>(() => ({
+    ...DEFAULT_INPUTS,
+    ...prefillFromEvalData(loadData()),
+  }))
 
   // Optional AI analysis. The API key lives in its own storage slot — never in
   // EvalData — so it is excluded from JSON export.
@@ -360,6 +372,7 @@ export default function App() {
         <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
         <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Internal Report</button>
         <button className={`tab ${view === 'assessment' ? 'active' : ''}`} onClick={() => setView('assessment')}>Assessment Report</button>
+        <button className={`tab ${view === 'pricing' ? 'active' : ''}`} onClick={() => setView('pricing')}>Pricing &amp; Proposal</button>
         <div className="tabs-spacer" />
         <button className="btn" onClick={exportJson}>Export data</button>
         <button className="btn" onClick={() => fileInput.current?.click()}>Import</button>
@@ -760,6 +773,12 @@ export default function App() {
             <iframe className="report-preview" title="Assessment report preview" srcDoc={assessmentHtml} />
           </section>
         </main>
+      )}
+
+      {view === 'pricing' && (
+        <Suspense fallback={<main className="pricing-view"><div className="app">Loading pricing…</div></main>}>
+          <PricingTab data={data} inputs={pricingInputs} setInputs={setPricingInputs} />
+        </Suspense>
       )}
 
       <footer className="app-footer">Data stays in your browser (localStorage). Export before switching devices.</footer>
