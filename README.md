@@ -58,6 +58,14 @@ compiles the collected data into a client-presentable report. Built with
 - Both reports: preview in-app and **download as a PDF** (generated in the
   browser and saved directly — no print dialog and no new tab, so it works the
   same on desktop and mobile). The PDF is named `<Report> - <Client>.pdf`.
+- **Pricing & Proposal** — an MSP managed-services pricing calculator (ported
+  from the `pricing_cal` project) built in as a tab. It prices four plans
+  (Co-Managed, Remote, Standard, Enterprise HaaS) live from the deal inputs,
+  **prefilled from the assessment** (users / locations / devices), shows a full
+  cost breakdown, lets you edit the cost **catalog**, and **exports a
+  support-plan proposal to `.docx`**. The tab is lazy-loaded so it adds nothing
+  to the initial page load. The pricing engine is covered by unit tests
+  (`npm test`).
 - **Autosave** to `localStorage`, plus **JSON export/import** (images included).
 - No backend, no network calls — works offline once loaded.
 
@@ -71,6 +79,7 @@ npm install
 npm run dev        # start the dev server
 npm run build      # type-check + production build to dist/
 npm run preview    # preview the production build
+npm test           # run the pricing-engine unit tests (vitest)
 ```
 
 ## Deployment
@@ -98,6 +107,12 @@ net_eval/
 │   ├── aiAnalysis.ts      # optional AI (Anthropic API) analysis
 │   ├── report.ts          # client-presentable data-report generator
 │   ├── pdf.ts             # client-side HTML→PDF export (jspdf + html2canvas)
+│   ├── pricing/           # Pricing & Proposal tab (ported from pricing_cal)
+│   │   ├── PricingTab.tsx    # tab UI (lazy-loaded); prefill.ts maps assessment → inputs
+│   │   ├── pricing.css       # calculator styles, scoped under .pricing-view
+│   │   ├── lib/              # pure engine: pricing.ts, catalog.ts, inputs.ts, exportDocx.ts (+ tests)
+│   │   ├── components/       # InputsPanel, PlanCards, LineItemTable, CatalogEditor, ExportPlan
+│   │   └── assets/           # support-plan .docx template
 │   └── styles.css
 ├── vite.config.ts
 └── .github/workflows/deploy.yml
