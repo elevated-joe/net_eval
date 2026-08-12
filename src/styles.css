@@ -364,7 +364,7 @@ select:focus {
 }
 .equip-row {
   display: grid;
-  grid-template-columns: 0.8fr 1.4fr auto;
+  grid-template-columns: 0.8fr 1.4fr 0.9fr auto;
   gap: 0.75rem;
   align-items: end;
 }

@@ -81,7 +81,11 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
           parts.push(
             '<table class="data"><thead><tr><th>Type</th><th>Make / Model</th></tr></thead><tbody>' +
               eq
-                .map((e) => `<tr><td>${esc(e.category) || '&mdash;'}</td><td>${esc(e.makeModel) || '&mdash;'}</td></tr>`)
+                .map((e) => {
+                  const pt = (e.platformType ?? '').trim()
+                  const type = (esc(e.category) || '&mdash;') + (pt ? ` <span style="color:#8895a3">— ${esc(pt)}</span>` : '')
+                  return `<tr><td>${type}</td><td>${esc(e.makeModel) || '&mdash;'}</td></tr>`
+                })
                 .join('') +
               '</tbody></table>',
           )

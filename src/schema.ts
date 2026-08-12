@@ -140,8 +140,6 @@ export const SECTIONS: SectionDef[] = [
     equipment: true,
     notes: true,
     fields: [
-      { key: 'firewallType', label: 'Firewall Platform Type', type: 'select', options: FIREWALL_TYPE_OPTIONS },
-      { key: 'switchType', label: 'Switch Platform Type', type: 'select', options: SWITCH_TYPE_OPTIONS },
       {
         key: 'hardwareCondition',
         label: 'Overall Hardware Condition',
@@ -217,6 +215,8 @@ export interface EquipmentEntry {
   category: string
   /** Make and model, e.g. "Fortinet FortiGate 100F". */
   makeModel: string
+  /** Platform type for Firewall (FIREWALL_TYPE_OPTIONS) / Switch (SWITCH_TYPE_OPTIONS) rows. */
+  platformType?: string
 }
 
 export interface ReportImage {
@@ -292,4 +292,10 @@ export function equipmentModels(d: EvalData, category: string): string {
     .filter((e) => e.category === category)
     .map((e) => e.makeModel.trim())
     .join(', ')
+}
+
+/** Platform type of the first active entry in a category (e.g. Firewall / Switch). */
+export function equipmentPlatform(d: EvalData, category: string): string {
+  const entry = activeEquipment(d).find((e) => e.category === category)
+  return (entry?.platformType ?? '').trim()
 }

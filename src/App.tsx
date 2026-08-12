@@ -2,6 +2,8 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   SECTIONS,
   EQUIPMENT_CATEGORIES,
+  FIREWALL_TYPE_OPTIONS,
+  SWITCH_TYPE_OPTIONS,
   emptyData,
   notesKey,
   parseChecklist,
@@ -55,14 +57,38 @@ function hydrate(parsed: Partial<EvalData>): EvalData {
     ['pdu', 'PDU'],
     ['ups', 'UPS'],
   ]
+  const f = parsed.fields ?? {}
   let equipment: EquipmentEntry[]
   if (Array.isArray(parsed.equipment)) {
-    equipment = parsed.equipment.map((e) => ({ category: e?.category ?? '', makeModel: e?.makeModel ?? '' }))
+    equipment = parsed.equipment.map((e) => ({
+      category: e?.category ?? '',
+      makeModel: e?.makeModel ?? '',
+      platformType: e?.platformType ?? '',
+    }))
+    // Backfill platform type from the former section-level selects onto the
+    // matching Firewall / Switch entry (for saves made before this change).
+    for (const [category, key] of [
+      ['Firewall', 'firewallType'],
+      ['Switch', 'switchType'],
+    ] as const) {
+      const v = ((f[key] ?? '') as string).trim()
+      if (!v) continue
+      const target = equipment.find((e) => e.category === category)
+      if (target && !(target.platformType ?? '').trim()) target.platformType = v
+    }
   } else {
-    const f = parsed.fields ?? {}
     equipment = legacyEquipment
       .filter(([k]) => ((f[k] ?? '') as string).trim() !== '')
-      .map(([k, category]) => ({ category, makeModel: (f[k] as string).trim() }))
+      .map(([k, category]) => ({
+        category,
+        makeModel: (f[k] as string).trim(),
+        platformType:
+          category === 'Firewall'
+            ? ((f['firewallType'] ?? '') as string).trim()
+            : category === 'Switch'
+              ? ((f['switchType'] ?? '') as string).trim()
+              : '',
+      }))
   }
   if (equipment.length === 0) equipment = base.equipment
 
@@ -530,6 +556,22 @@ export default function App() {
                           onChange={(e) => updateEquipment(idx, { makeModel: e.target.value })}
                         />
                       </div>
+                      {eq.category === 'Firewall' || eq.category === 'Switch' ? (
+                        <div className="field">
+                          <label>Platform Type</label>
+                          <select
+                            value={eq.platformType ?? ''}
+                            onChange={(e) => updateEquipment(idx, { platformType: e.target.value })}
+                          >
+                            <option value="">— Select —</option>
+                            {(eq.category === 'Firewall' ? FIREWALL_TYPE_OPTIONS : SWITCH_TYPE_OPTIONS).map((o) => (
+                              <option key={o} value={o}>{o}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <div className="equip-platform-spacer" aria-hidden="true" />
+                      )}
                       <button
                         className="btn subtle isp-remove"
                         onClick={() => removeEquipment(idx)}
