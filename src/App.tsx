@@ -369,7 +369,7 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Form</button>
+        <button className={`tab ${view === 'form' ? 'active' : ''}`} onClick={() => setView('form')}>Evaluation</button>
         <button className={`tab ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>Internal Report</button>
         <button className={`tab ${view === 'assessment' ? 'active' : ''}`} onClick={() => setView('assessment')}>Assessment Report</button>
         <button className={`tab ${view === 'pricing' ? 'active' : ''}`} onClick={() => setView('pricing')}>Pricing &amp; Proposal</button>

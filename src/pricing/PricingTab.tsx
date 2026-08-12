@@ -119,7 +119,12 @@ export function PricingTab({ data, inputs, setInputs }: Props) {
         </div>
 
         {showExport && (
-          <ExportPlan plans={result.plans} users={inputs.users} onClose={() => setShowExport(false)} />
+          <ExportPlan
+            plans={result.plans}
+            users={inputs.users}
+            defaultClientName={(data.fields.clientName ?? '').trim()}
+            onClose={() => setShowExport(false)}
+          />
         )}
 
         {showEditor && (

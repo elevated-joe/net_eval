@@ -168,10 +168,6 @@
   display: flex;
   flex-direction: column;
 }
-.pricing-view .plan-card.featured {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), var(--shadow);
-}
 .pricing-view .plan-head h3 {
   margin: 0;
   font-size: 15px;
