@@ -7,7 +7,7 @@
 // risk-priorities table and next steps. All wording is templated and
 // rule-based; the UI lets the analyst edit any finding/recommendation.
 
-import { activeIsps, parseChecklist, type EvalData } from './schema'
+import { activeIsps, activeEquipment, equipmentModels, parseChecklist, type EvalData } from './schema'
 
 export type Rating = 'Good' | 'Attention' | 'At Risk' | 'Informational' | 'Not Assessed'
 
@@ -342,13 +342,13 @@ function connectivitySection(d: EvalData): AssessmentSection {
 }
 
 function hardwareSection(d: EvalData): AssessmentSection {
-  const fw = val(d, 'firewall')
+  const fw = equipmentModels(d, 'Firewall')
   const fwType = val(d, 'firewallType')
   const cond = val(d, 'hardwareCondition')
-  const pdu = val(d, 'pdu')
-  const ups = val(d, 'ups')
+  const pdu = equipmentModels(d, 'PDU')
+  const ups = equipmentModels(d, 'UPS')
   const base = { id: 'hardware', title: 'Network & Infrastructure Hardware' }
-  const anyData = [fw, fwType, cond, pdu, ups, val(d, 'switch'), val(d, 'switchType'), val(d, 'wireless'), val(d, 'server')].some(has)
+  const anyData = [fw, fwType, cond, pdu, ups, val(d, 'switchType')].some(has) || activeEquipment(d).length > 0
   const actions = [
     'Inventory core hardware: model, age, warranty status, firmware level, and business function.',
     'Establish a refresh or virtualization plan for aging or end-of-life equipment.',

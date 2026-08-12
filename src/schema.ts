@@ -24,6 +24,8 @@ export interface SectionDef {
   fields: FieldDef[]
   /** Render the repeatable ISP editor in this section. */
   isp?: boolean
+  /** Render the repeatable network-equipment editor in this section. */
+  equipment?: boolean
   /** Render the image-upload editor in this section. */
   images?: boolean
   /** Show a free-text notes box for this section. */
@@ -49,6 +51,7 @@ export const DOMAIN_OPTIONS = ['Domain', 'Entra ID (Azure AD)', 'Hybrid (AD + En
 export const MFA_COVERAGE_OPTIONS = ['All services', 'Webmail only', 'Partial', 'None', 'Unknown']
 export const FIREWALL_TYPE_OPTIONS = ['Next-gen (supported)', 'Open-source', 'Unknown']
 export const SWITCH_TYPE_OPTIONS = ['Managed', 'Unmanaged', 'Unknown']
+export const EQUIPMENT_CATEGORIES = ['Firewall', 'Switch', 'Wireless AP', 'Server', 'PDU', 'UPS', 'Other']
 export const YES_NO_UNKNOWN = ['Yes', 'No', 'Unknown']
 export const HARDWARE_CONDITION_OPTIONS = ['Current', 'Mixed', 'Aging', 'End-of-life', 'Unknown']
 export const PATCH_MGMT_OPTIONS = ['Actively managed', 'Ad-hoc', 'Unmanaged', 'Unknown']
@@ -133,17 +136,12 @@ export const SECTIONS: SectionDef[] = [
   {
     id: 'hardware',
     title: 'Network & Infrastructure Hardware',
-    description: 'Record make and model for each device class.',
+    description: 'List each device and its make/model — use “+ Add equipment” for additional units — then note platform type and overall condition.',
+    equipment: true,
     notes: true,
     fields: [
-      { key: 'firewall', label: 'Firewall (Make/Model)', type: 'text', placeholder: 'e.g. Fortinet FortiGate 100F' },
       { key: 'firewallType', label: 'Firewall Platform Type', type: 'select', options: FIREWALL_TYPE_OPTIONS },
-      { key: 'switch', label: 'Switch (Make/Model)', type: 'text', placeholder: 'e.g. Cisco Catalyst 9200' },
       { key: 'switchType', label: 'Switch Platform Type', type: 'select', options: SWITCH_TYPE_OPTIONS },
-      { key: 'wireless', label: 'Wireless (Make/Model)', type: 'text', placeholder: 'e.g. Ubiquiti UniFi U6-Pro' },
-      { key: 'server', label: 'Server (Make/Model)', type: 'text', placeholder: 'e.g. Dell PowerEdge R650' },
-      { key: 'pdu', label: 'PDU (Make/Model)', type: 'text', placeholder: 'e.g. APC AP8853' },
-      { key: 'ups', label: 'UPS (Make/Model)', type: 'text', placeholder: 'e.g. APC Smart-UPS 3000' },
       {
         key: 'hardwareCondition',
         label: 'Overall Hardware Condition',
@@ -214,6 +212,13 @@ export interface IspEntry {
   speed: string
 }
 
+export interface EquipmentEntry {
+  /** Device category (see EQUIPMENT_CATEGORIES), or '' if unset. */
+  category: string
+  /** Make and model, e.g. "Fortinet FortiGate 100F". */
+  makeModel: string
+}
+
 export interface ReportImage {
   id: string
   name: string
@@ -238,6 +243,8 @@ export interface EvalData {
   fields: Record<string, string>
   /** Repeatable ISP circuits. */
   isps: IspEntry[]
+  /** Repeatable network-equipment inventory. */
+  equipment: EquipmentEntry[]
   /** Images embedded into the internal report. */
   images: ReportImage[]
   /** Manual edits to auto-drafted assessment text, keyed by block id (e.g. 'exec', 'finding__backup'). */
@@ -261,6 +268,7 @@ export function emptyData(): EvalData {
   return {
     fields,
     isps: [{ provider: '', speed: '' }],
+    equipment: [{ category: '', makeModel: '' }],
     images: [],
     assessmentText: {},
     hiddenSections: [],
@@ -271,4 +279,17 @@ export function emptyData(): EvalData {
 /** ISP entries that have at least a provider or a speed filled in. */
 export function activeIsps(d: EvalData): IspEntry[] {
   return d.isps.filter((i) => (i.provider ?? '').trim() !== '' || (i.speed ?? '').trim() !== '')
+}
+
+/** Equipment entries that have a make/model recorded. */
+export function activeEquipment(d: EvalData): EquipmentEntry[] {
+  return d.equipment.filter((e) => (e.makeModel ?? '').trim() !== '')
+}
+
+/** Comma-joined make/models for a given equipment category. */
+export function equipmentModels(d: EvalData, category: string): string {
+  return activeEquipment(d)
+    .filter((e) => e.category === category)
+    .map((e) => e.makeModel.trim())
+    .join(', ')
 }

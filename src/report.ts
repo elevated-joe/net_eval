@@ -6,7 +6,7 @@
 // HTML is used for on-screen preview, download, and Print → Save as PDF, so
 // what you see is what you send.
 
-import { activeIsps, SECTIONS, notesKey, type EvalData } from './schema'
+import { activeIsps, activeEquipment, SECTIONS, notesKey, type EvalData } from './schema'
 
 function esc(s: string): string {
   return s
@@ -75,6 +75,18 @@ export function buildReportHtml(d: EvalData, opts: ReportOptions): string {
         parts.push(rows)
       }
     } else {
+      if (section.equipment) {
+        const eq = activeEquipment(d)
+        if (eq.length) {
+          parts.push(
+            '<table class="data"><thead><tr><th>Type</th><th>Make / Model</th></tr></thead><tbody>' +
+              eq
+                .map((e) => `<tr><td>${esc(e.category) || '&mdash;'}</td><td>${esc(e.makeModel) || '&mdash;'}</td></tr>`)
+                .join('') +
+              '</tbody></table>',
+          )
+        }
+      }
       const rows = sectionRows(d, section.id)
       if (rows.length) parts.push(tableHtml(rows))
     }

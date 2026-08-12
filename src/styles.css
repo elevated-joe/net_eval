@@ -353,10 +353,20 @@ select:focus {
 }
 
 /* ISP repeatable rows */
-.isp-list {
+.isp-list,
+.equip-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+.equip-list {
+  margin-bottom: 1.25rem;
+}
+.equip-row {
+  display: grid;
+  grid-template-columns: 0.8fr 1.4fr auto;
+  gap: 0.75rem;
+  align-items: end;
 }
 
 .isp-row {
@@ -806,7 +816,8 @@ select:focus {
   .fields {
     grid-template-columns: 1fr;
   }
-  .isp-row {
+  .isp-row,
+  .equip-row {
     grid-template-columns: 1fr auto;
   }
 }
