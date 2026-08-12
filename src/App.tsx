@@ -1,11 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   SECTIONS,
+  EQUIPMENT_CATEGORIES,
   emptyData,
   notesKey,
   parseChecklist,
   type EvalData,
   type IspEntry,
+  type EquipmentEntry,
   type ReportImage,
 } from './schema'
 import { buildReportHtml } from './report'
@@ -43,9 +45,31 @@ function hydrate(parsed: Partial<EvalData>): EvalData {
         section: typeof im.section === 'string' ? im.section : '',
       }))
     : base.images
+  // Equipment: use the stored list, or migrate from the legacy per-class
+  // make/model fields (firewall, switch, …) so older saves aren't lost.
+  const legacyEquipment: [string, string][] = [
+    ['firewall', 'Firewall'],
+    ['switch', 'Switch'],
+    ['wireless', 'Wireless AP'],
+    ['server', 'Server'],
+    ['pdu', 'PDU'],
+    ['ups', 'UPS'],
+  ]
+  let equipment: EquipmentEntry[]
+  if (Array.isArray(parsed.equipment)) {
+    equipment = parsed.equipment.map((e) => ({ category: e?.category ?? '', makeModel: e?.makeModel ?? '' }))
+  } else {
+    const f = parsed.fields ?? {}
+    equipment = legacyEquipment
+      .filter(([k]) => ((f[k] ?? '') as string).trim() !== '')
+      .map(([k, category]) => ({ category, makeModel: (f[k] as string).trim() }))
+  }
+  if (equipment.length === 0) equipment = base.equipment
+
   return {
     fields: { ...base.fields, ...(parsed.fields ?? {}) },
     isps: Array.isArray(parsed.isps) && parsed.isps.length ? parsed.isps : base.isps,
+    equipment,
     images,
     assessmentText:
       parsed.assessmentText && typeof parsed.assessmentText === 'object' ? parsed.assessmentText : base.assessmentText,
@@ -312,6 +336,24 @@ export default function App() {
     }))
   }, [])
 
+  const updateEquipment = useCallback((index: number, patch: Partial<EquipmentEntry>) => {
+    setData((prev) => ({
+      ...prev,
+      equipment: prev.equipment.map((e, idx) => (idx === index ? { ...e, ...patch } : e)),
+    }))
+  }, [])
+
+  const addEquipment = useCallback(() => {
+    setData((prev) => ({ ...prev, equipment: [...prev.equipment, { category: '', makeModel: '' }] }))
+  }, [])
+
+  const removeEquipment = useCallback((index: number) => {
+    setData((prev) => ({
+      ...prev,
+      equipment: prev.equipment.length > 1 ? prev.equipment.filter((_, idx) => idx !== index) : prev.equipment,
+    }))
+  }, [])
+
   const addImages = useCallback(async (files: FileList) => {
     const processed: ReportImage[] = []
     for (const file of Array.from(files)) {
@@ -462,6 +504,46 @@ export default function App() {
             <section key={section.id} className="card">
               <h2>{section.title}</h2>
               {section.description && <p className="section-desc">{section.description}</p>}
+
+              {section.equipment && (
+                <div className="equip-list">
+                  {data.equipment.map((eq, idx) => (
+                    <div key={idx} className="equip-row">
+                      <div className="field">
+                        <label>Type</label>
+                        <select
+                          value={eq.category}
+                          onChange={(e) => updateEquipment(idx, { category: e.target.value })}
+                        >
+                          <option value="">— Select —</option>
+                          {EQUIPMENT_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label>Make / Model</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Fortinet FortiGate 100F"
+                          value={eq.makeModel}
+                          onChange={(e) => updateEquipment(idx, { makeModel: e.target.value })}
+                        />
+                      </div>
+                      <button
+                        className="btn subtle isp-remove"
+                        onClick={() => removeEquipment(idx)}
+                        disabled={data.equipment.length <= 1}
+                        title="Remove this equipment"
+                        aria-label="Remove equipment"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <button className="btn add-isp" onClick={addEquipment}>+ Add equipment</button>
+                </div>
+              )}
 
               {section.fields.length > 0 && (
                 <div className="fields">
