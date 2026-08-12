@@ -155,11 +155,13 @@ function AutoGrowTextarea({
   value,
   placeholder,
   onChange,
+  className,
 }: {
   id?: string
   value: string
   placeholder?: string
   onChange: (v: string) => void
+  className?: string
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const resize = () => {
@@ -173,7 +175,7 @@ function AutoGrowTextarea({
     <textarea
       ref={ref}
       id={id}
-      className="autogrow"
+      className={className ? `autogrow ${className}` : 'autogrow'}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -856,11 +858,10 @@ function AssessmentEditor({ blockId, label, auto, value, badge, actions, compact
           </button>
         )}
       </div>
-      <textarea
+      <AutoGrowTextarea
         className="assess-text"
-        rows={compact ? 3 : 4}
         value={edited ? value : auto}
-        onChange={(e) => onChange(blockId, e.target.value)}
+        onChange={(v) => onChange(blockId, v)}
       />
       {actions && actions.length > 0 && (
         <div className="assess-actions">
