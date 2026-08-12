@@ -348,7 +348,7 @@ function hardwareSection(d: EvalData): AssessmentSection {
   const pdu = val(d, 'pdu')
   const ups = val(d, 'ups')
   const base = { id: 'hardware', title: 'Network & Infrastructure Hardware' }
-  const anyData = [fw, fwType, cond, pdu, ups, val(d, 'switch'), val(d, 'wireless'), val(d, 'server')].some(has)
+  const anyData = [fw, fwType, cond, pdu, ups, val(d, 'switch'), val(d, 'switchType'), val(d, 'wireless'), val(d, 'server')].some(has)
   const actions = [
     'Inventory core hardware: model, age, warranty status, firmware level, and business function.',
     'Establish a refresh or virtualization plan for aging or end-of-life equipment.',
@@ -527,27 +527,23 @@ function securitySection(d: EvalData): AssessmentSection {
 }
 
 function toolsSection(d: EvalData): AssessmentSection {
-  const remoteTools = val(d, 'remoteTools')
   const lob = val(d, 'lobTools')
   const base = { id: 'tools', title: 'Management & Business Tools' }
-  if (!has(remoteTools) && !has(lob)) {
+  if (!has(lob)) {
     return {
       ...base,
       rating: 'Not Assessed',
-      finding: 'Management and line-of-business tools were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting your key business applications and remote support tools so support and continuity planning account for them.',
+      finding: 'Line-of-business tools were not captured during this assessment.',
+      clientRecommendation: 'We recommend documenting your key business applications so support and continuity planning account for them.',
       actions: [],
     }
   }
-  const parts: string[] = []
-  if (has(remoteTools)) parts.push(`remote management via ${remoteTools}`)
-  if (has(lob)) parts.push(`line-of-business applications (${lob})`)
   return {
     ...base,
     rating: 'Informational',
-    finding: `The environment uses ${englishList(parts)}. These are documented so support, licensing, and continuity planning account for them.`,
+    finding: `The environment relies on line-of-business applications (${lob}). These are documented so support, licensing, and continuity planning account for them.`,
     clientRecommendation:
-      "We've documented your key applications and support tools so they're factored into support coverage and business continuity planning.",
+      "We've documented your key applications so they're factored into support coverage and business continuity planning.",
     actions: [],
   }
 }

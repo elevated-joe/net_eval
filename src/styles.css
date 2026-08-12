@@ -189,6 +189,13 @@ select {
   cursor: pointer;
 }
 
+/* Auto-growing textareas size themselves to their content (see AutoGrowTextarea). */
+textarea.autogrow {
+  resize: none;
+  overflow: hidden;
+  min-height: 3.5rem;
+}
+
 input:focus,
 textarea:focus,
 select:focus {

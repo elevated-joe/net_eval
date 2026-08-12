@@ -146,6 +146,41 @@ function processLogoFile(file: File): Promise<string> {
   })
 }
 
+/**
+ * Textarea that grows to fit its content, so long notes are fully visible
+ * without a scrollbar or manual dragging.
+ */
+function AutoGrowTextarea({
+  id,
+  value,
+  placeholder,
+  onChange,
+}: {
+  id?: string
+  value: string
+  placeholder?: string
+  onChange: (v: string) => void
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const resize = () => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.max(el.scrollHeight, 56)}px`
+  }
+  useEffect(resize, [value])
+  return (
+    <textarea
+      ref={ref}
+      id={id}
+      className="autogrow"
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  )
+}
+
 export default function App() {
   const [data, setData] = useState<EvalData>(loadData)
   const [view, setView] = useState<View>('form')
@@ -432,12 +467,11 @@ export default function App() {
                     <div key={f.key} className={`field ${f.type === 'textarea' || f.type === 'checklist' ? 'field-wide' : ''}`}>
                       <label htmlFor={f.key}>{f.label}</label>
                       {f.type === 'textarea' ? (
-                        <textarea
+                        <AutoGrowTextarea
                           id={f.key}
-                          rows={3}
                           placeholder={f.placeholder}
                           value={data.fields[f.key]}
-                          onChange={(e) => updateField(f.key, e.target.value)}
+                          onChange={(v) => updateField(f.key, v)}
                         />
                       ) : f.type === 'select' ? (
                         <select id={f.key} value={data.fields[f.key]} onChange={(e) => updateField(f.key, e.target.value)}>
@@ -579,13 +613,12 @@ export default function App() {
 
               {section.notes && (
                 <div className="field field-wide section-notes">
-                  <label htmlFor={notesKey(section.id)}>Section Notes</label>
-                  <textarea
+                  <label htmlFor={notesKey(section.id)}>{section.title} Notes</label>
+                  <AutoGrowTextarea
                     id={notesKey(section.id)}
-                    rows={2}
-                    placeholder="Notes for this section (included in the report)"
+                    placeholder={`Notes on ${section.title.toLowerCase()} (included in the report)`}
                     value={data.fields[notesKey(section.id)] ?? ''}
-                    onChange={(e) => updateField(notesKey(section.id), e.target.value)}
+                    onChange={(v) => updateField(notesKey(section.id), v)}
                   />
                 </div>
               )}
