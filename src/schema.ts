@@ -48,6 +48,7 @@ export const M365_SERVICES = ['Exchange', 'SharePoint', 'Teams', 'Intune', 'MDM'
 export const DOMAIN_OPTIONS = ['Domain', 'Entra ID (Azure AD)', 'Hybrid (AD + Entra)', 'Workgroup']
 export const MFA_COVERAGE_OPTIONS = ['All services', 'Webmail only', 'Partial', 'None', 'Unknown']
 export const FIREWALL_TYPE_OPTIONS = ['Next-gen (supported)', 'Open-source', 'Unknown']
+export const SWITCH_TYPE_OPTIONS = ['Managed', 'Unmanaged', 'Unknown']
 export const YES_NO_UNKNOWN = ['Yes', 'No', 'Unknown']
 export const HARDWARE_CONDITION_OPTIONS = ['Current', 'Mixed', 'Aging', 'End-of-life', 'Unknown']
 export const PATCH_MGMT_OPTIONS = ['Actively managed', 'Ad-hoc', 'Unmanaged', 'Unknown']
@@ -138,6 +139,7 @@ export const SECTIONS: SectionDef[] = [
       { key: 'firewall', label: 'Firewall (Make/Model)', type: 'text', placeholder: 'e.g. Fortinet FortiGate 100F' },
       { key: 'firewallType', label: 'Firewall Platform Type', type: 'select', options: FIREWALL_TYPE_OPTIONS },
       { key: 'switch', label: 'Switch (Make/Model)', type: 'text', placeholder: 'e.g. Cisco Catalyst 9200' },
+      { key: 'switchType', label: 'Switch Platform Type', type: 'select', options: SWITCH_TYPE_OPTIONS },
       { key: 'wireless', label: 'Wireless (Make/Model)', type: 'text', placeholder: 'e.g. Ubiquiti UniFi U6-Pro' },
       { key: 'server', label: 'Server (Make/Model)', type: 'text', placeholder: 'e.g. Dell PowerEdge R650' },
       { key: 'pdu', label: 'PDU (Make/Model)', type: 'text', placeholder: 'e.g. APC AP8853' },
@@ -179,20 +181,6 @@ export const SECTIONS: SectionDef[] = [
     ],
   },
   {
-    id: 'tools',
-    title: 'Management & Business Tools',
-    notes: true,
-    fields: [
-      { key: 'remoteTools', label: 'Remote Tools', type: 'text', placeholder: 'e.g. ConnectWise, TeamViewer' },
-      {
-        key: 'lobTools',
-        label: 'Line-of-Business (LOB) Tools',
-        type: 'textarea',
-        placeholder: 'Key applications the business depends on',
-      },
-    ],
-  },
-  {
     id: 'business',
     title: 'Business Context',
     description: 'Operational and commercial background for the assessment.',
@@ -204,6 +192,12 @@ export const SECTIONS: SectionDef[] = [
       { key: 'currentProvider', label: 'Current Provider (Network)', type: 'text', placeholder: 'e.g. In-house / MSP name' },
       { key: 'budget', label: 'Budget', type: 'text', placeholder: 'e.g. $50k annual' },
       { key: 'fiscalYear', label: 'Fiscal Year', type: 'text', placeholder: 'e.g. Jan–Dec' },
+      {
+        key: 'lobTools',
+        label: 'Line-of-Business (LOB) Tools',
+        type: 'textarea',
+        placeholder: 'Key applications the business depends on',
+      },
     ],
   },
   {

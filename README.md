@@ -8,8 +8,9 @@ compiles the collected data into a client-presentable report. Built with
 
 - Grouped intake form covering client details, organization scale, connectivity,
   infrastructure hardware (make/model), virtualization & backup, the security
-  stack, management tools, and business context — mirroring the standard
-  network-assessment template.
+  stack, and business context (including line-of-business tools) — mirroring the
+  standard network-assessment template. Every section has its own free-text
+  **Notes** box that auto-expands to fit what you type.
 - **Client & engagement** header (client name, prepared-by, date) that brands the
   report.
 - **Company logo** on both report covers — ships with the Elevated MSP mark and
