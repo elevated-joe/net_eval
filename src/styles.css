@@ -58,7 +58,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0.75rem;
@@ -69,10 +69,19 @@ h1 {
   color: var(--muted);
   border: 1px solid transparent;
   border-radius: 8px;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.88rem;
   font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+/* Compact the nav's action buttons so the whole row fits on one line at the
+   app's width; the row still wraps gracefully on very narrow screens. */
+.tabs .btn {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .tab:hover {
@@ -86,7 +95,10 @@ h1 {
 }
 
 .tabs-spacer {
-  flex: 1 1 auto;
+  /* Push the action buttons to the right using an auto margin rather than a
+     growing flex item — a flex-grow spacer would consume line 1's free space
+     and force the buttons to wrap even when they'd otherwise fit. */
+  margin-left: auto;
 }
 
 .btn {
