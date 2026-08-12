@@ -20,7 +20,7 @@ export function PlanCards({ plans }: Props) {
   return (
     <div className="plan-grid">
       {plans.map((p) => (
-        <article key={p.key} className={`plan-card ${p.key === "enterprise" ? "featured" : ""}`}>
+        <article key={p.key} className="plan-card">
           <header className="plan-head">
             <h3>{p.label}</h3>
             <div className="plan-price">

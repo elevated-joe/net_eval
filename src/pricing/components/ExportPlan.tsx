@@ -11,13 +11,15 @@ interface Props {
   plans: PlanResult[];
   users: number;
   onClose: () => void;
+  /** Prefill for the Client Name field (pulled from the Evaluation). */
+  defaultClientName?: string;
 }
 
 const SALES_REPS = ["Tom Hogue", "Joe Timko"];
 
-export function ExportPlan({ plans, users, onClose }: Props) {
+export function ExportPlan({ plans, users, onClose, defaultClientName = "" }: Props) {
   const [meta, setMeta] = useState<ExportMeta>({
-    clientName: "",
+    clientName: defaultClientName,
     clientContact: "",
     addressStreet: "",
     addressCityStateZip: "",
