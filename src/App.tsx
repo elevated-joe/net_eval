@@ -16,6 +16,7 @@ import { buildReportHtml } from './report'
 import { buildAssessment, RATINGS, ASSESSMENT_SECTIONS } from './assessment'
 import { buildAssessmentHtml } from './assessmentReport'
 import { runAiAnalysis, AI_MODELS } from './aiAnalysis'
+import { readAttachment, formatBytes, ATTACHMENT_ACCEPT, type Attachment } from './attachments'
 import { DEFAULT_LOGO } from './brand'
 import { prefillFromEvalData } from './pricing/prefill'
 import { DEFAULT_INPUTS, type PricingInputs } from './pricing/lib/inputs'
@@ -238,6 +239,7 @@ export default function App() {
   const [view, setView] = useState<View>('form')
   const fileInput = useRef<HTMLInputElement>(null)
   const imageInput = useRef<HTMLInputElement>(null)
+  const docInput = useRef<HTMLInputElement>(null)
   const logoInput = useRef<HTMLInputElement>(null)
 
   // Company logo (data URL). Absent storage → ship the default; empty string → no logo.
@@ -255,6 +257,10 @@ export default function App() {
 
   // Optional AI analysis. The API key lives in its own storage slot — never in
   // EvalData — so it is excluded from JSON export.
+  // Reference documents are session-only: held here rather than in EvalData so
+  // they never reach localStorage or a JSON export (see attachments.ts).
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [attachError, setAttachError] = useState('')
   const [aiKey, setAiKey] = useState<string>(() => localStorage.getItem(AI_KEY_STORAGE) ?? '')
   const [aiModel, setAiModel] = useState<string>(() => localStorage.getItem(AI_MODEL_STORAGE) ?? AI_MODELS[0].id)
   const [aiStatus, setAiStatus] = useState<{ state: 'idle' | 'running' | 'done' | 'warn' | 'error'; message?: string }>({
@@ -320,7 +326,7 @@ export default function App() {
     localStorage.setItem(AI_MODEL_STORAGE, aiModel)
     setAiStatus({ state: 'running' })
     try {
-      const { overrides, warnings } = await runAiAnalysis(data, { apiKey: key, model: aiModel })
+      const { overrides, warnings } = await runAiAnalysis(data, { apiKey: key, model: aiModel }, attachments)
       setData((prev) => ({ ...prev, assessmentText: { ...prev.assessmentText, ...overrides } }))
       const applied = 'AI analysis applied. Every section is still editable below.'
       setAiStatus({
@@ -332,7 +338,7 @@ export default function App() {
     } catch (e) {
       setAiStatus({ state: 'error', message: e instanceof Error ? e.message : 'AI analysis failed.' })
     }
-  }, [aiKey, aiModel, data])
+  }, [aiKey, aiModel, data, attachments])
 
   const clearAllOverrides = useCallback(() => {
     if (confirm('Clear all AI/manual edits and rating overrides, returning to the auto-drafted assessment?')) {
@@ -401,6 +407,28 @@ export default function App() {
 
   const updateImage = useCallback((id: string, patch: Partial<ReportImage>) => {
     setData((prev) => ({ ...prev, images: prev.images.map((im) => (im.id === id ? { ...im, ...patch } : im)) }))
+  }, [])
+
+  const addAttachments = useCallback(async (files: FileList) => {
+    const added: Attachment[] = []
+    const failed: string[] = []
+    for (const file of Array.from(files)) {
+      try {
+        added.push(await readAttachment(file))
+      } catch (e) {
+        failed.push(e instanceof Error ? e.message : `Could not read ${file.name}.`)
+      }
+    }
+    if (added.length) setAttachments((prev) => [...prev, ...added])
+    setAttachError(failed.join(' '))
+  }, [])
+
+  const updateAttachment = useCallback((id: string, patch: Partial<Attachment>) => {
+    setAttachments((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)))
+  }, [])
+
+  const removeAttachment = useCallback((id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id))
   }, [])
 
   const removeImage = useCallback((id: string) => {
@@ -743,6 +771,52 @@ export default function App() {
                 </div>
               )}
 
+              {section.documents && (
+                <div className="doc-manager">
+                  {attachments.length > 0 && (
+                    <ul className="doc-list">
+                      {attachments.map((a) => (
+                        <li key={a.id} className="doc-item">
+                          <div className="doc-head">
+                            <span className={`doc-kind doc-${a.kind}`}>{a.kind.toUpperCase()}</span>
+                            <span className="doc-name" title={a.name}>{a.name}</span>
+                            <span className="doc-size">{formatBytes(a.sizeBytes)}</span>
+                            <button
+                              className="btn subtle doc-remove"
+                              onClick={() => removeAttachment(a.id)}
+                              title="Remove document"
+                              aria-label={`Remove ${a.name}`}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <input
+                            type="text"
+                            className="doc-note"
+                            placeholder="What is this? (optional — e.g. 2025 vendor security audit)"
+                            value={a.note}
+                            onChange={(e) => updateAttachment(a.id, { note: e.target.value })}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <button className="btn add-isp" onClick={() => docInput.current?.click()}>+ Add documents</button>
+                  {attachError && <p className="doc-error">{attachError}</p>}
+                  <input
+                    ref={docInput}
+                    type="file"
+                    accept={ATTACHMENT_ACCEPT}
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      if (e.target.files?.length) void addAttachments(e.target.files)
+                      e.target.value = ''
+                    }}
+                  />
+                </div>
+              )}
+
               {section.notes && (
                 <div className="field field-wide section-notes">
                   <label htmlFor={notesKey(section.id)}>{section.title} Notes</label>
@@ -849,6 +923,12 @@ export default function App() {
                 </button>
                 <button className="btn subtle" onClick={clearAllOverrides}>Reset to auto-draft</button>
               </div>
+              {attachments.length > 0 && (
+                <p className="ai-attachments">
+                  Sending {attachments.length} reference document{attachments.length === 1 ? '' : 's'} with this run:{' '}
+                  {attachments.map((a) => a.name).join(', ')}.
+                </p>
+              )}
               {aiStatus.message && <p className={`ai-status ai-${aiStatus.state}`}>{aiStatus.message}</p>}
             </section>
 

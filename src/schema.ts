@@ -28,6 +28,8 @@ export interface SectionDef {
   equipment?: boolean
   /** Render the image-upload editor in this section. */
   images?: boolean
+  /** Render the reference-document attachment editor in this section. */
+  documents?: boolean
   /** Show a free-text notes box for this section. */
   notes?: boolean
 }
@@ -201,6 +203,14 @@ export const SECTIONS: SectionDef[] = [
     title: 'Photos & Diagrams',
     description: 'Upload network diagrams, rack photos, or screenshots to include in the report.',
     images: true,
+    fields: [],
+  },
+  {
+    id: 'documents',
+    title: 'Reference Documents',
+    description:
+      'Attach existing reports (PDF or Word) — a vendor audit, a prior assessment, pen-test results — for the AI draft to take into account. These are never shown or named in the report, and they are not saved: they stay for this browser session only and are left out of JSON exports.',
+    documents: true,
     fields: [],
   },
 ]
