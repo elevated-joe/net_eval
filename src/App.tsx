@@ -257,7 +257,7 @@ export default function App() {
   // EvalData — so it is excluded from JSON export.
   const [aiKey, setAiKey] = useState<string>(() => localStorage.getItem(AI_KEY_STORAGE) ?? '')
   const [aiModel, setAiModel] = useState<string>(() => localStorage.getItem(AI_MODEL_STORAGE) ?? AI_MODELS[0].id)
-  const [aiStatus, setAiStatus] = useState<{ state: 'idle' | 'running' | 'done' | 'error'; message?: string }>({
+  const [aiStatus, setAiStatus] = useState<{ state: 'idle' | 'running' | 'done' | 'warn' | 'error'; message?: string }>({
     state: 'idle',
   })
   const [pdfBusy, setPdfBusy] = useState(false)
@@ -320,9 +320,15 @@ export default function App() {
     localStorage.setItem(AI_MODEL_STORAGE, aiModel)
     setAiStatus({ state: 'running' })
     try {
-      const overrides = await runAiAnalysis(data, { apiKey: key, model: aiModel })
+      const { overrides, warnings } = await runAiAnalysis(data, { apiKey: key, model: aiModel })
       setData((prev) => ({ ...prev, assessmentText: { ...prev.assessmentText, ...overrides } }))
-      setAiStatus({ state: 'done', message: 'AI analysis applied. Every section is still editable below.' })
+      const applied = 'AI analysis applied. Every section is still editable below.'
+      setAiStatus({
+        state: warnings.length ? 'warn' : 'done',
+        message: warnings.length
+          ? `${applied} Check the wording in ${warnings.join('; ')} — it still reads as personal or plan-specific.`
+          : applied,
+      })
     } catch (e) {
       setAiStatus({ state: 'error', message: e instanceof Error ? e.message : 'AI analysis failed.' })
     }
