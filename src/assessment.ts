@@ -6,6 +6,13 @@
 // client-facing recommendation, and technical action items — plus a
 // risk-priorities table and next steps. All wording is templated and
 // rule-based; the UI lets the analyst edit any finding/recommendation.
+//
+// Voice: the generated copy is deliberately impersonal. It describes the
+// environment rather than addressing the reader ("you"/"your") or speaking as
+// the assessor ("we"), so the report can be presented to a room without the
+// contact who supplied the answers feeling singled out. Recommendations stay
+// technical and vendor-neutral — no service plan, support tier, or engagement
+// model (co-managed, fully managed, and so on) is named or implied.
 
 import { activeIsps, activeEquipment, equipmentModels, equipmentPlatform, parseChecklist, type EvalData } from './schema'
 
@@ -101,7 +108,7 @@ const INCIDENT_PATTERNS: IncidentPattern[] = [
     sections: ['security', 'identity'],
     tech: 'Notes reference recent phishing/spoofing activity, which sharply raises the importance of end-user training, MFA, and email filtering in this area.',
     client:
-      'Your notes mention a recent phishing/spoofing attempt. Because attackers are already targeting your team, strengthening staff training, MFA, and email protection should be treated as an immediate priority.',
+      'Assessment notes reference a recent phishing or spoofing attempt. Because activity of this kind is already reaching the environment, strengthening security awareness training, MFA, and email protection should be treated as an immediate priority.',
     indicator: 'Recent phishing/spoofing activity noted with related controls incomplete.',
   },
   {
@@ -110,7 +117,7 @@ const INCIDENT_PATTERNS: IncidentPattern[] = [
     sections: ['security', 'platform'],
     tech: 'Notes reference a ransomware concern, which elevates the importance of endpoint protection and verified, offline/immutable backups.',
     client:
-      'Your notes mention ransomware. The most effective protections are endpoint security, staff training, and backups that are tested and stored offline — these should be prioritized.',
+      'Assessment notes reference ransomware. The most effective protections are endpoint security, security awareness training, and backups that are tested and stored offline — these should be prioritized.',
     indicator: 'Ransomware concern noted; verify endpoint protection and backups.',
   },
   {
@@ -119,7 +126,7 @@ const INCIDENT_PATTERNS: IncidentPattern[] = [
     sections: ['identity', 'security'],
     tech: 'Notes reference a security breach or account compromise, which elevates the priority of MFA coverage and access controls.',
     client:
-      'Your notes mention a breach or account compromise. Enforcing multi-factor authentication everywhere and reviewing access is the fastest way to reduce repeat risk.',
+      'Assessment notes reference a breach or account compromise. Enforcing multi-factor authentication everywhere and reviewing access rights is the fastest way to reduce the risk of a repeat.',
     indicator: 'Breach / account compromise noted; MFA and access controls are a priority.',
   },
   {
@@ -128,7 +135,7 @@ const INCIDENT_PATTERNS: IncidentPattern[] = [
     sections: ['platform'],
     tech: 'Notes reference a data-loss event, which elevates the importance of verified restores and offsite/immutable backups.',
     client:
-      'Your notes mention data loss. Confirming that backups are tested and stored offsite is the key protection against a repeat.',
+      'Assessment notes reference a data-loss event. Confirming that backups are tested and stored offsite is the key protection against a repeat.',
     indicator: 'Data-loss event noted; verify tested, offsite backups.',
   },
   {
@@ -137,7 +144,7 @@ const INCIDENT_PATTERNS: IncidentPattern[] = [
     sections: ['connectivity'],
     tech: 'Notes reference a connectivity outage, which elevates the value of redundant internet with automatic failover.',
     client:
-      'Your notes mention an internet outage. A second connection with automatic failover would prevent a repeat from stopping your operations.',
+      'Assessment notes reference an internet outage. A second connection with automatic failover would keep a repeat from stopping day-to-day operations.',
     indicator: 'Connectivity outage noted; redundancy/failover recommended.',
   },
 ]
@@ -232,7 +239,7 @@ function identitySection(d: EvalData): AssessmentSection {
       rating: 'Not Assessed',
       finding: 'Identity and Microsoft 365 details were not captured during this assessment.',
       clientRecommendation:
-        'We recommend documenting your directory model and Microsoft 365 configuration so identity protections like multi-factor authentication can be verified.',
+        'Documenting the directory model and Microsoft 365 configuration would allow identity protections such as multi-factor authentication to be verified.',
       actions,
     }
   }
@@ -243,7 +250,7 @@ function identitySection(d: EvalData): AssessmentSection {
       rating: 'Good',
       finding: `${dirNote}${svcNote}Microsoft 365 multifactor authentication appears to be enforced across all services${mfa ? ` using ${mfa}` : ''}. Maintain Conditional Access policies and review exclusions periodically.`,
       clientRecommendation:
-        'Your Microsoft 365 accounts are protected with multi-factor authentication across every service — the single strongest, simplest defense against stolen passwords. No action is needed beyond routine policy reviews as your team changes.',
+        'Microsoft 365 accounts are protected with multi-factor authentication across every service — the single strongest, simplest defense against stolen passwords. No action is needed beyond routine policy reviews as staffing changes.',
       actions: ['Periodically review Conditional Access policies, exclusions, and emergency accounts.'],
     }
   }
@@ -255,7 +262,7 @@ function identitySection(d: EvalData): AssessmentSection {
     case 'Webmail only':
       finding = `${dirNote}${svcNote}Microsoft 365 MFA appears to protect webmail access only, rather than all Office 365 services and sign-in methods. Partial enforcement leaves desktop apps, mobile apps, legacy authentication, and services such as SharePoint, OneDrive, and Teams exposed.`
       clientRec =
-        'Right now multi-factor authentication only covers webmail, so Teams, SharePoint, OneDrive, and the desktop apps can still be reached with just a password. Extending MFA to every Microsoft 365 sign-in is the highest-impact step you can take to prevent account takeover.'
+        'Multi-factor authentication currently covers webmail only, so Teams, SharePoint, OneDrive, and the desktop apps can still be reached with just a password. Extending MFA to every Microsoft 365 sign-in is the highest-impact step available to prevent account takeover.'
       break
     case 'Partial':
       finding = `${dirNote}${svcNote}Microsoft 365 MFA and Conditional Access are only partially configured. Gaps in coverage leave some authentication paths and services exposed to account compromise.`
@@ -265,12 +272,12 @@ function identitySection(d: EvalData): AssessmentSection {
     case 'None':
       finding = `${dirNote}${svcNote}Microsoft 365 multifactor authentication does not appear to be enforced. Accounts protected by passwords alone materially increase the risk of account compromise and unauthorized access.`
       clientRec =
-        'Accounts are protected by passwords alone today. Because stolen or guessed passwords are the most common way businesses get breached, we strongly recommend turning on multi-factor authentication across Microsoft 365.'
+        'Accounts are protected by passwords alone today. Because stolen or guessed passwords are the most common way businesses are breached, enabling multi-factor authentication across Microsoft 365 is strongly recommended.'
       break
     default:
       finding = `${dirNote}${svcNote}Microsoft 365 multifactor authentication coverage could not be confirmed. Unverified MFA enforcement should be treated as a priority validation item.`
       clientRec =
-        "We couldn't confirm how broadly multi-factor authentication is enforced. Confirming — and, where needed, expanding — MFA coverage across Microsoft 365 should be an early priority."
+        'The breadth of multi-factor authentication enforcement could not be confirmed. Confirming — and, where needed, expanding — MFA coverage across Microsoft 365 should be an early priority.'
   }
 
   return {
@@ -299,7 +306,7 @@ function connectivitySection(d: EvalData): AssessmentSection {
       ...base,
       rating: 'Not Assessed',
       finding: 'Internet connectivity details were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting your internet circuits and whether automatic failover is in place.',
+      clientRecommendation: 'Documenting the internet circuits in use and whether automatic failover is in place would allow connectivity risk to be evaluated.',
       actions,
     }
   }
@@ -310,7 +317,7 @@ function connectivitySection(d: EvalData): AssessmentSection {
       rating: 'Good',
       finding: `Redundant internet connectivity is present via ${isps.length} circuits with automatic failover configured.`,
       clientRecommendation:
-        'You have more than one internet connection with automatic failover, so a single carrier outage will not take email, cloud apps, or remote access offline. We recommend periodic failover testing to keep it reliable.',
+        'More than one internet connection is in place with automatic failover, so a single carrier outage will not take email, cloud apps, or remote access offline. Periodic failover testing is recommended to keep it reliable.',
       actions: ['Periodically test automatic failover between circuits and document the results.'],
     }
   }
@@ -321,7 +328,7 @@ function connectivitySection(d: EvalData): AssessmentSection {
       rating: 'Attention',
       finding: `Multiple internet circuits (${isps.length}) are present, but automatic failover is not confirmed. Without verified failover, an outage on the primary circuit may still disrupt operations.`,
       clientRecommendation:
-        'You have more than one internet connection, but we could not confirm that failover happens automatically. Verifying failover ensures the switch-over is seamless during an outage.',
+        'More than one internet connection is in place, but automatic failover could not be confirmed. Verifying failover ensures the switch-over is seamless during an outage.',
       actions,
       indicator: 'Internet failover is not confirmed.',
       reason: 'Unverified failover can still allow avoidable downtime during a carrier outage.',
@@ -334,7 +341,7 @@ function connectivitySection(d: EvalData): AssessmentSection {
     finding:
       'No redundant internet connectivity was identified. The environment appears to rely on a single internet connection without documented failover capability, creating a single point of failure for cloud applications, email, remote connectivity, and daily operations.',
     clientRecommendation:
-      'Your internet runs on a single connection, which is a single point of failure — if it goes down, email, cloud apps, phones, and remote work go with it. We recommend adding a second internet line that automatically takes over so a carrier outage does not stop your day.',
+      'Internet service runs on a single connection, which is a single point of failure — if it goes down, email, cloud apps, phones, and remote work go with it. Adding a second internet line that takes over automatically would keep a carrier outage from stopping the business day.',
     actions,
     indicator: 'No redundant internet connectivity.',
     reason: 'Single-carrier dependence creates avoidable operational downtime risk.',
@@ -361,7 +368,7 @@ function hardwareSection(d: EvalData): AssessmentSection {
       ...base,
       rating: 'Not Assessed',
       finding: 'Network and infrastructure hardware details were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting your firewall, switching, wireless, server, and power equipment so lifecycle and support risks can be evaluated.',
+      clientRecommendation: 'Documenting the firewall, switching, wireless, server, and power equipment would allow lifecycle and reliability risks to be evaluated.',
       actions,
     }
   }
@@ -387,7 +394,7 @@ function hardwareSection(d: EvalData): AssessmentSection {
       rating: 'Good',
       finding: `Core network hardware appears current${fw ? ` (firewall: ${fw})` : ''}, protected by a supported firewall, with rack power protection in place. Maintain firmware updates and periodic reviews.`,
       clientRecommendation:
-        'Your core network hardware is current, protected by a supported firewall, and has proper power protection — a solid foundation. We recommend keeping firmware and warranties current.',
+        'Core network hardware is current, protected by a supported firewall, and has proper power protection — a solid foundation. Keeping firmware and warranty coverage current is recommended.',
       actions: ['Maintain firmware updates, warranty coverage, and periodic firewall rule reviews.'],
     }
   }
@@ -396,8 +403,8 @@ function hardwareSection(d: EvalData): AssessmentSection {
   return {
     ...base,
     rating,
-    finding: `We noted that ${englishList(issues)}. Unknown lifecycle status and weak perimeter or power protection increase the risk of hardware failure, replacement delays, and unmanaged security exposure.`,
-    clientRecommendation: `In your network hardware, ${englishList(issues)}. Addressing these improves day-to-day reliability, strengthens perimeter security, and reduces the chance of unexpected downtime.`,
+    finding: `The assessment found that ${englishList(issues)}. Unknown lifecycle status and weak perimeter or power protection increase the risk of hardware failure, replacement delays, and unmanaged security exposure.`,
+    clientRecommendation: `Within the network hardware, ${englishList(issues)}. Addressing these improves day-to-day reliability, strengthens perimeter security, and reduces the chance of unexpected downtime.`,
     actions,
     indicator: 'Aging hardware, weak firewall governance, or missing power protection.',
     reason: 'Hardware lifecycle and perimeter/power gaps raise reliability and security concerns.',
@@ -423,7 +430,7 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
       ...base,
       rating: 'Not Assessed',
       finding: 'Backup and virtualization details were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting your backup platform and confirming that restores are tested and stored offsite.',
+      clientRecommendation: 'Documenting the backup platform and confirming that restores are tested and copies stored offsite would allow recoverability to be verified.',
       actions,
     }
   }
@@ -434,7 +441,7 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
       rating: 'Good',
       finding: `Backups are handled by ${backup}, with restore testing confirmed and an offsite/immutable copy in place${hypervisor ? `; virtualization runs on ${hypervisor}` : ''}. Continue routine restore testing and monitoring.`,
       clientRecommendation:
-        'Your backups are running, restore-tested, and stored offsite — exactly the safety net you want against ransomware or accidental loss. We recommend continuing routine restore tests.',
+        'Backups are running, restore-tested, and stored offsite — exactly the safety net needed against ransomware or accidental loss. Continuing routine restore tests is recommended.',
       actions: ['Continue scheduled restore testing and periodically validate offsite/immutable copies.'],
     }
   }
@@ -447,7 +454,7 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
         ? 'The current state of backups is unknown, and working backups could not be confirmed. There is no documented evidence of restore testing, offsite copy validation, or immutable protection.'
         : `A backup solution (${backup}) is in place, but restore testing has not been performed. Untested backups frequently fail at the moment they are needed.`,
       clientRecommendation:
-        'We could not confirm working, tested backups. This is the difference between a bad day and a business-ending event during ransomware or hardware failure — validating restores and keeping a protected offsite copy should be a top priority.',
+        'Working, tested backups could not be confirmed. This is the difference between a bad day and a business-ending event during ransomware or hardware failure — validating restores and keeping a protected offsite copy should be a top priority.',
       actions,
       indicator: 'Backups are not clearly documented or regularly tested.',
       reason: 'Unknown or unverified backup status creates major recovery and ransomware risk.',
@@ -458,7 +465,7 @@ function dataProtectionSection(d: EvalData): AssessmentSection {
     ...base,
     rating: 'Attention',
     finding: `A backup solution (${backup}) is in place, but ${tested !== 'Yes' ? 'restore testing' : 'an offsite/immutable copy'} is not confirmed. The existence of backup jobs alone does not guarantee recoverability.`,
-    clientRecommendation: `Backups appear to be in place (${backup}), but we could not confirm ${tested !== 'Yes' ? 'that restores are regularly tested' : 'a protected offsite copy'}. Verifying recovery ensures your safety net actually works when you need it.`,
+    clientRecommendation: `Backups appear to be in place (${backup}), but ${tested !== 'Yes' ? 'regular restore testing' : 'a protected offsite copy'} could not be confirmed. Verifying recovery ensures the safety net actually works when it is needed.`,
     actions,
     indicator: 'Backup restore testing or offsite copy is unconfirmed.',
     reason: 'Unverified backups can fail during recovery, extending downtime after an incident.',
@@ -488,7 +495,7 @@ function securitySection(d: EvalData): AssessmentSection {
       ...base,
       rating: 'Not Assessed',
       finding: 'Email and endpoint security details were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting endpoint protection, email filtering, training, patching, and remote access so security coverage can be evaluated.',
+      clientRecommendation: 'Documenting endpoint protection, email filtering, training, patching, and remote access would allow security coverage to be evaluated.',
       actions,
     }
   }
@@ -509,7 +516,7 @@ function securitySection(d: EvalData): AssessmentSection {
       finding:
         'Core security layers — endpoint protection, email filtering, MFA, content filtering, training, and patch management — appear to be in place. Maintain monitoring and keep tooling current.',
       clientRecommendation:
-        'Your core security layers are in place — endpoint protection, email filtering, training, content filtering, and managed patching. We recommend keeping them monitored and current.',
+        'Core security layers are in place — endpoint protection, email filtering, training, content filtering, and patch management. Keeping them monitored and current is recommended.',
       actions: ['Keep security tooling monitored, licensed, and current; continue recurring training.'],
     }
   }
@@ -519,7 +526,7 @@ function securitySection(d: EvalData): AssessmentSection {
     ...base,
     rating: critical ? 'At Risk' : 'Attention',
     finding: `Good security relies on layered defenses. During the assessment, ${englishList(missing)}. These gaps increase exposure to phishing, malware, and account compromise.`,
-    clientRecommendation: `Strong security works in layers. We noted that ${englishList(missing)}. Closing these gaps meaningfully lowers your risk of phishing, ransomware, and account compromise.`,
+    clientRecommendation: `Strong security works in layers. The assessment found that ${englishList(missing)}. Closing these gaps meaningfully lowers the risk of phishing, ransomware, and account compromise.`,
     actions,
     indicator: 'Gaps in layered email/endpoint security controls.',
     reason: 'Missing security layers increase exposure to phishing, malware, and compromise.',
@@ -534,16 +541,16 @@ function toolsSection(d: EvalData): AssessmentSection {
       ...base,
       rating: 'Not Assessed',
       finding: 'Line-of-business tools were not captured during this assessment.',
-      clientRecommendation: 'We recommend documenting your key business applications so support and continuity planning account for them.',
+      clientRecommendation: 'Documenting the key business applications in use would allow continuity and recovery planning to account for them.',
       actions: [],
     }
   }
   return {
     ...base,
     rating: 'Informational',
-    finding: `The environment relies on line-of-business applications (${lob}). These are documented so support, licensing, and continuity planning account for them.`,
+    finding: `The environment relies on line-of-business applications (${lob}). These are documented so licensing, continuity, and recovery planning account for them.`,
     clientRecommendation:
-      "We've documented your key applications so they're factored into support coverage and business continuity planning.",
+      'Key business applications are documented so they are factored into continuity and recovery planning.',
     actions: [],
   }
 }
@@ -568,7 +575,7 @@ function organizationSection(d: EvalData): AssessmentSection {
     rating: 'Informational',
     finding: `The environment supports ${scale}${has(industry) ? ` in the ${industry.toLowerCase()} sector` : ''}.${complianceActive ? ` The organization is subject to ${compliance} requirements.` : ''}`,
     clientRecommendation: complianceActive
-      ? `Because you're subject to ${compliance}, we recommend mapping the controls above — MFA, tested backups, logging, and training — to that framework so you can demonstrate compliance.`
+      ? `Because the organization is subject to ${compliance}, mapping the controls above — MFA, tested backups, logging, and training — to that framework supports demonstrating compliance.`
       : 'This section captures the size and business context that shape the recommendations throughout this report.',
     actions: complianceActive
       ? [`Map recommended security controls to ${compliance} requirements and document evidence.`]
@@ -584,7 +591,10 @@ function ratingFor(atRisk: number, attention: number): string {
 }
 
 export function buildAssessment(d: EvalData): Assessment {
-  const client = has(val(d, 'clientName')) ? val(d, 'clientName') : 'The organization'
+  // Possessive subject for the summary paragraphs. Falls back to a neutral
+  // phrase when no client name was entered.
+  const client = has(val(d, 'clientName')) ? val(d, 'clientName') : 'the organization'
+  const clientCap = client.charAt(0).toUpperCase() + client.slice(1)
   const users = val(d, 'users')
   const devices = val(d, 'devices')
   const locations = val(d, 'locations')
@@ -631,14 +641,14 @@ export function buildAssessment(d: EvalData): Assessment {
   const riskAreas = englishList(flagged.map((s) => s.title.toLowerCase()))
 
   const execSummary =
-    `The ${client} network environment currently supports ${scale} across ${loc}. ` +
+    `${clientCap}'s network environment currently supports ${scale} across ${loc}. ` +
     `The environment is ${domainPhrase(val(d, 'domainType'))}, providing ${val(d, 'domainType') === 'Workgroup' ? 'decentralized' : 'baseline centralized'} identity and access management, but several core resilience, security, and infrastructure controls ${flagged.length ? 'require further validation or remediation' : 'were reviewed and appear reasonably managed'}.` +
     (flagged.length
       ? `\n\nThe most significant areas identified during this assessment relate to ${riskAreas}. These gaps increase exposure to service outages, ransomware, unauthorized access, and prolonged recovery times following an incident.`
       : '')
 
   const overall =
-    `Overall, the ${client}'s network risk posture is best characterized as ${overallRating.toLowerCase()}` +
+    `Overall, ${client}'s network risk posture is best characterized as ${overallRating.toLowerCase()}` +
     (flagged.length
       ? `, driven by ${flagged.length} area${flagged.length === 1 ? '' : 's'} requiring attention across resilience, security, and infrastructure management that together increase the likelihood and impact of a cyber incident or prolonged outage.`
       : '. No high-severity gaps were identified, though routine validation and monitoring should continue.')
@@ -653,10 +663,10 @@ export function buildAssessment(d: EvalData): Assessment {
   const highAreas = englishList(atRisk.map((s) => s.title.toLowerCase()))
   const medAreas = englishList(attention.map((s) => s.title.toLowerCase()))
   const nextSteps = atRisk.length
-    ? `We recommend the ${client} address ${highAreas} first, as ${atRisk.length === 1 ? 'it presents' : 'they present'} the most immediate cybersecurity and recovery risk.${attention.length ? ` These should be followed by ${medAreas} to further improve resilience and supportability.` : ''}`
+    ? `The recommended sequence is to address ${highAreas} first, as ${atRisk.length === 1 ? 'it presents' : 'they present'} the most immediate cybersecurity and recovery risk.${attention.length ? ` These should be followed by ${medAreas} to further improve resilience and manageability.` : ''}`
     : attention.length
-      ? `We recommend the ${client} prioritize ${medAreas} to improve resilience and supportability, followed by routine validation of the remaining controls.`
-      : `No high-priority remediation items were identified. We recommend the ${client} maintain current controls and continue routine validation and monitoring.`
+      ? `The recommended sequence is to prioritize ${medAreas} to improve resilience and manageability, followed by routine validation of the remaining controls.`
+      : 'No high-priority remediation items were identified. Maintaining the current controls and continuing routine validation and monitoring is recommended.'
 
   return { execSummary, overallRating, overall, keyIndicators, sections, priorities, nextSteps }
 }

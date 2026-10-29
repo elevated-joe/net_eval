@@ -1,5 +1,9 @@
 // Optional AI-powered assessment analysis.
 //
+// Output follows the same voice rules as the rule-based engine in
+// assessment.ts: impersonal third person, no "you"/"we", and no steer toward
+// any particular service plan or engagement model.
+//
 // Sends the full intake data (including free-text notes) to the Anthropic
 // Messages API directly from the browser and returns override text for the
 // assessment blocks. This genuinely "reads" everything and correlates answers
@@ -47,15 +51,21 @@ function intakeSnapshot(d: EvalData): unknown {
 
 function buildPrompt(d: EvalData): string {
   const snapshot = JSON.stringify(intakeSnapshot(d), null, 2)
-  return `You are a senior network assessor at a managed IT services provider (MSP). Analyze the following network evaluation intake data and produce a client-facing network assessment.
+  return `You are a senior network assessor at a managed IT services provider (MSP). Analyze the following network evaluation intake data and produce a vendor-neutral, client-facing network assessment.
 
 Read everything, including the free-text notes, and correlate answers across sections:
 - If a section's notes mention a security incident or event (e.g. phishing/spoofing, ransomware, breach, outage, data loss), reflect it in that section's finding, recommendation, and rating.
 - Consider how gaps combine. For example, "None" for end-user training together with a recent spoofing incident in the notes is a high-priority exposure and should be rated "At Risk" with a recommendation that connects the two.
 
+Write every part of the report in neutral, impersonal third person:
+- Describe the environment, not the reader. Never use "you" or "your", and never refer to individual people, roles, or whoever supplied the answers. Say "Backups are not restore-tested", not "your backups are not tested".
+- Never use "we", "our", or the assessing company's name. Phrase advice as "Enabling MFA ... is recommended", not "we recommend ...".
+- Stay vendor- and plan-neutral. Do not name, recommend, or imply any service plan, support tier, engagement model (for example co-managed, fully managed, or outsourced IT), managed-service offering, or provider. Recommend technical outcomes and controls only.
+- Report what was observed without assigning blame for a gap.
+
 For each section, produce:
 - "rating": exactly one of ${RATINGS.map((r) => `"${r}"`).join(', ')}
-- "clientRecommendation": 1-3 sentences, plain language for a non-technical client, written in the MSP's voice ("we recommend...")
+- "clientRecommendation": 1-3 sentences, plain language for a non-technical reader, in the neutral voice described above
 - "finding": 1-3 sentences of supporting technical detail
 
 Also produce:
