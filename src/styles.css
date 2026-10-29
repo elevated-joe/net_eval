@@ -571,6 +571,11 @@ select:focus {
   color: var(--risk);
 }
 
+/* Analysis applied, but some wording still needs an edit before presenting. */
+.ai-status.ai-warn {
+  color: #f59e0b;
+}
+
 .ai-status.ai-running {
   color: var(--muted);
 }
